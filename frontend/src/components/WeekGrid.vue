@@ -38,17 +38,35 @@ const weeks = computed(() => {
   const config = gridStore.config;
   if (!config?.start_date || !config?.deadline) return [];
   
-  const start = new Date(config.start_date);
-  const end = new Date(config.deadline);
+  // Use YYYY, MM, DD to avoid timezone shifts when parsing
+  const parseDate = (dateStr) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+
+  const formatDate = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+  };
+  
+  const start = parseDate(config.start_date);
+  const end = parseDate(config.deadline);
   
   const weeksList = [];
   let current = new Date(start);
   let index = 0;
   
   while (current <= end) {
+    const y = current.getFullYear();
+    const m = String(current.getMonth() + 1).padStart(2, '0');
+    const d = String(current.getDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
+
     weeksList.push({
       index,
-      startDate: current.toISOString().split('T')[0]
+      startDate: dateStr
     });
     current.setDate(current.getDate() + 7);
     index++;
@@ -61,20 +79,18 @@ const totalWeeks = computed(() => weeks.value.length);
 
 const currentWeekStart = computed(() => {
   const today = new Date();
-  const day = today.getDay();
-  const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Понедельник
+  const day = today.getDay(); // 0 (Sun) to 6 (Sat)
+  const diff = today.getDate() - (day === 0 ? 6 : day - 1); // Adjust to get Monday
   const monday = new Date(today.setDate(diff));
-  return monday.toISOString().split('T')[0];
+  
+  const yyyy = monday.getFullYear();
+  const mm = String(monday.getMonth() + 1).padStart(2, '0');
+  const dd = String(monday.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 });
 
 const currentWeekIndex = computed(() => {
-    const config = gridStore.config;
-    if (!config?.start_date) return -1;
-    const start = new Date(config.start_date);
-    const now = new Date();
-    const diffTime = now - start;
-    if (diffTime < 0) return -1;
-    return Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+    return weeks.value.findIndex(w => w.startDate === currentWeekStart.value);
 });
 
 const completedWeeks = computed(() => {

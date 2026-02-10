@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel, EmailStr, field_validator
+from typing import Optional, Any
 from datetime import date
 
 class UserBase(BaseModel):
@@ -9,6 +9,13 @@ class UserBase(BaseModel):
     deadline: Optional[date] = None
     emoji: Optional[str] = "🎓"
     is_superuser: bool = False
+
+    @field_validator("start_date", "deadline", mode="before")
+    @classmethod
+    def empty_string_to_none(cls, v: Any) -> Any:
+        if v == "":
+            return None
+        return v
 
 class UserCreate(UserBase):
     email: EmailStr
@@ -21,6 +28,13 @@ class UserUpdate(BaseModel):
     emoji: Optional[str] = None
     password: Optional[str] = None
     is_superuser: Optional[bool] = None
+
+    @field_validator("start_date", "deadline", mode="before")
+    @classmethod
+    def empty_string_to_none(cls, v: Any) -> Any:
+        if v == "":
+            return None
+        return v
 
 class UserOut(UserBase):
     id: int
