@@ -17,7 +17,7 @@ const loadingUser = ref(false);
 
 const isOwnGrid = computed(() => !selectedUserId.value || selectedUserId.value === authStore.user?.id);
 
-// Fetch target user profile (dates)
+// Получение профиля целевого пользователя
 const fetchTargetUser = async (userId) => {
   if (!userId || userId === authStore.user?.id) {
     targetUser.value = authStore.user;
@@ -28,7 +28,7 @@ const fetchTargetUser = async (userId) => {
     const response = await axios.get(`http://localhost:8000/users/${userId}`);
     targetUser.value = response.data;
   } catch (err) {
-    console.error('Failed to fetch user profile', err);
+    console.error('Не удалось загрузить профиль пользователя', err);
   } finally {
     loadingUser.value = false;
   }
@@ -62,7 +62,7 @@ const totalWeeks = computed(() => weeks.value.length);
 const currentWeekStart = computed(() => {
   const today = new Date();
   const day = today.getDay();
-  const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Monday
+  const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Понедельник
   const monday = new Date(today.setDate(diff));
   return monday.toISOString().split('T')[0];
 });
@@ -86,7 +86,7 @@ const progressPercentage = computed(() => {
   return Math.round((completedWeeks.value / totalWeeks.value) * 100);
 });
 
-// Modal state
+// Состояние модального окна
 const selectedWeekDate = ref(null);
 const selectedWeekNumber = ref(null);
 const editForm = ref({
@@ -95,7 +95,7 @@ const editForm = ref({
 });
 
 const openEditModal = (startDate, weekNumber) => {
-  // Allow edit only for own grid AND current week
+  // Разрешить редактирование только для своей сетки И текущей недели
   if (!isOwnGrid.value) return;
   if (startDate !== currentWeekStart.value) return;
 
@@ -139,19 +139,19 @@ watch(selectedUserId, async (newId) => {
 
 <template>
   <div class="space-y-8 max-w-6xl mx-auto px-4 py-8">
-    <!-- User Selector -->
+    <!-- Выбор пользователя -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
         <div class="flex items-center gap-3">
             <div class="bg-indigo-100 p-2 rounded-lg">
                 <Users class="w-5 h-5 text-indigo-600" />
             </div>
-            <span class="font-bold text-gray-700">View Grid:</span>
+            <span class="font-bold text-gray-700">Просмотр:</span>
             <select 
                 v-model="selectedUserId"
                 class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
             >
-                <option :value="authStore.user?.id">My Private Grid</option>
-                <optgroup label="Public Grids">
+                <option :value="authStore.user?.id">Моя сетка</option>
+                <optgroup label="Публичные сетки">
                     <option v-for="user in usersStore.users.filter(u => u.id !== authStore.user?.id)" :key="user.id" :value="user.id">
                         {{ user.emoji }} {{ user.full_name }}
                     </option>
@@ -161,40 +161,40 @@ watch(selectedUserId, async (newId) => {
         
         <div v-if="!isOwnGrid" class="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-xl text-sm font-bold border border-amber-100">
             <Clock class="w-4 h-4" />
-            Read-only Mode
+            Режим просмотра
         </div>
     </div>
 
-    <!-- Empty state if dates not set -->
+    <!-- Пустое состояние, если даты не заданы -->
     <div v-if="!targetUser?.start_date || !targetUser?.deadline" class="bg-blue-50 border-2 border-blue-200 rounded-3xl p-12 text-center">
         <Loader2 v-if="loadingUser" class="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
         <template v-else>
-            <h2 class="text-2xl font-black text-blue-900 mb-4">Dates not set 🗓️</h2>
+            <h2 class="text-2xl font-black text-blue-900 mb-4">Даты не заданы 🗓️</h2>
             <p class="text-blue-700 font-medium max-w-md mx-auto mb-8">
-                {{ isOwnGrid ? 'Please set your start date and deadline in settings.' : 'This user hasn\'t set their diploma dates yet.' }}
+                {{ isOwnGrid ? 'Пожалуйста, укажите дату начала и дедлайн в настройках.' : 'Этот пользователь еще не указал даты своего обучения.' }}
             </p>
         </template>
     </div>
 
     <template v-else>
-        <!-- Header/Dashboard -->
+        <!-- Заголовок/Дашборд -->
         <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-8 items-center justify-between transition-all">
           <div class="space-y-2 text-center md:text-left">
             <div class="flex items-center justify-center md:justify-start gap-3">
                 <span class="text-4xl">{{ targetUser?.emoji }}</span>
                 <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">
-                    {{ isOwnGrid ? 'Your Progress' : targetUser?.full_name }}
+                    {{ isOwnGrid ? 'Ваш прогресс' : targetUser?.full_name }}
                 </h1>
             </div>
             <p class="text-gray-500 font-medium flex items-center gap-2 justify-center md:justify-start">
               <Calendar class="w-4 h-4" />
-              {{ totalWeeks }} weeks journey
+              Путь длиной в {{ totalWeeks }} недель
             </p>
           </div>
 
           <div class="flex gap-6 items-center">
             <div class="text-center">
-              <p class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">Progress</p>
+              <p class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">Прогресс</p>
               <div class="relative flex items-center justify-center">
                  <svg class="w-20 h-20 transform -rotate-90">
                     <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="8" fill="transparent" class="text-gray-100" />
@@ -207,17 +207,17 @@ watch(selectedUserId, async (newId) => {
             <div class="space-y-1">
               <div class="flex items-center gap-2 text-green-600 font-bold">
                 <CheckCircle2 class="w-5 h-5" />
-                <span>{{ completedWeeks }} completed</span>
+                <span>{{ completedWeeks }} выполнено</span>
               </div>
               <div class="flex items-center gap-2 text-slate-800 font-bold">
                 <Clock class="w-5 h-5" />
-                <span>{{ totalWeeks - completedWeeks }} remaining</span>
+                <span>{{ totalWeeks - completedWeeks }} осталось</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Grid -->
+        <!-- Сетка -->
         <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
           <div class="grid grid-cols-4 sm:grid-cols-7 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-15 gap-3">
             <WeekCell 
@@ -232,38 +232,38 @@ watch(selectedUserId, async (newId) => {
             />
           </div>
           
-          <!-- Legend -->
+          <!-- Легенда -->
           <div class="mt-8 pt-6 border-t border-gray-100 flex flex-wrap gap-6 text-sm font-medium text-gray-500">
             <div class="flex items-center gap-2">
               <div class="w-4 h-4 bg-green-500 rounded shadow-sm"></div>
-              <span>Completed</span>
+              <span>Выполнено</span>
             </div>
             <div class="flex items-center gap-2">
                 <div class="w-4 h-4 bg-slate-900 rounded shadow-sm text-white flex items-center justify-center text-[10px]">✕</div>
-                <span>Missed</span>
+                <span>Пропущено</span>
             </div>
             <div class="flex items-center gap-2">
               <div class="w-4 h-4 bg-blue-50 border border-blue-400 rounded shadow-sm"></div>
-              <span>Current Week</span>
+              <span>Текущая неделя</span>
             </div>
             <div class="flex items-center gap-2">
               <div class="w-4 h-4 bg-amber-100 border border-amber-300 rounded shadow-sm"></div>
-              <span>Special Period</span>
+              <span>Спец. период</span>
             </div>
           </div>
           <div v-if="isOwnGrid" class="mt-4 text-xs text-gray-400 italic">
-            * You can only mark progress for the current week.
+            * Вы можете отмечать прогресс только для текущей недели.
           </div>
         </div>
     </template>
 
-    <!-- Edit Modal (same as before) -->
+    <!-- Модальное окно редактирования -->
     <div v-if="selectedWeekDate !== null" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
         <div class="bg-gray-50 px-8 py-6 flex items-center justify-between border-b">
           <div>
-            <h3 class="text-xl font-extrabold text-gray-900">Week {{ selectedWeekNumber + 1 }}</h3>
-            <p class="text-sm text-gray-500">Starting on {{ selectedWeekDate }}</p>
+            <h3 class="text-xl font-extrabold text-gray-900">Неделя {{ selectedWeekNumber + 1 }}</h3>
+            <p class="text-sm text-gray-500">Начиная с {{ selectedWeekDate }}</p>
           </div>
           <button @click="closeEditModal" class="p-2 hover:bg-gray-200 rounded-full transition-colors">
             <X class="w-6 h-6 text-gray-500" />
@@ -272,7 +272,7 @@ watch(selectedUserId, async (newId) => {
 
         <div class="p-8 space-y-6">
           <div class="space-y-3">
-            <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider text-center">Did you make progress?</label>
+            <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider text-center">Был ли прогресс?</label>
             <div class="flex justify-center gap-4">
               <button 
                 @click="editForm.is_completed = true"
@@ -283,7 +283,7 @@ watch(selectedUserId, async (newId) => {
                     : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200'
                 ]"
               >
-                YES! 🚀
+                ДА! 🚀
               </button>
               <button 
                 @click="editForm.is_completed = false"
@@ -294,17 +294,17 @@ watch(selectedUserId, async (newId) => {
                     : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200'
                 ]"
               >
-                NOT YET 😴
+                НЕТ 😴
               </button>
             </div>
           </div>
 
           <div class="space-y-3">
-            <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Notes (Optional)</label>
+            <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Заметки (опционально)</label>
             <textarea 
               v-model="editForm.note" 
               rows="3" 
-              placeholder="What did you achieve this week?" 
+              placeholder="Что было сделано за эту неделю?" 
               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none"
             ></textarea>
           </div>
@@ -315,25 +315,17 @@ watch(selectedUserId, async (newId) => {
             @click="closeEditModal" 
             class="flex-1 px-6 py-3 border border-gray-200 bg-white text-gray-600 font-bold rounded-xl hover:bg-gray-100 transition-colors"
           >
-            Cancel
+            Отмена
           </button>
           <button 
             @click="saveWeekProgress" 
             class="flex-1 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200 active:scale-95"
           >
             <Save class="w-5 h-5" />
-            Save Progress
+            Сохранить
           </button>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-@media (min-width: 1280px) {
-  .xl\:grid-cols-15 {
-    grid-template-columns: repeat(15, minmax(0, 1fr));
-  }
-}
-</style>

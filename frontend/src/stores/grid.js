@@ -41,7 +41,7 @@ export const useGridStore = defineStore('grid', {
         this.weeks = weeksRes.data;
         this.specialPeriods = periodsRes.data;
       } catch (err) {
-        this.error = err.response?.data?.detail || 'Failed to fetch grid data';
+        this.error = err.response?.data?.detail || 'Ошибка загрузки данных сетки';
       } finally {
         this.loading = false;
       }
@@ -62,7 +62,7 @@ export const useGridStore = defineStore('grid', {
         }
         return true;
       } catch (err) {
-        this.error = err.response?.data?.detail || 'Failed to update week';
+        this.error = err.response?.data?.detail || 'Ошибка обновления недели';
         return false;
       }
     }

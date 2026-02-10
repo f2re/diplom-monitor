@@ -16,7 +16,7 @@ export const useUsersStore = defineStore('users', {
         const response = await axios.get(`${API_URL}/users`);
         this.users = response.data;
       } catch (err) {
-        this.error = 'Failed to load users';
+        this.error = 'Ошибка загрузки списка пользователей';
       } finally {
         this.loading = false;
       }

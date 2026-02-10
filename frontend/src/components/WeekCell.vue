@@ -29,11 +29,13 @@ const emit = defineEmits(['click']);
 const isPast = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - today.weekday); // Simple current monday check
+  const day = today.getDay();
+  const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+  const currentMonday = new Date(today.setDate(diff));
+  currentMonday.setHours(0, 0, 0, 0);
   
   const weekStart = new Date(props.startDate);
-  return weekStart < monday;
+  return weekStart < currentMonday;
 });
 
 const isMissed = computed(() => {
@@ -74,7 +76,7 @@ const displayValue = computed(() => {
   <div 
     :class="cellClasses"
     @click="emit('click', startDate, weekNumber)"
-    :title="`Week ${weekNumber + 1} (${startDate})${progress?.is_completed ? ': Completed' : isMissed ? ': Missed' : ''}${specialPeriod ? ': ' + specialPeriod.period_type : ''}`"
+    :title="`Неделя ${weekNumber + 1} (${startDate})${progress?.is_completed ? ': Выполнено' : isMissed ? ': Пропущено' : ''}${specialPeriod ? ': ' + specialPeriod.period_type : ''}`"
   >
     <span class="relative z-20">{{ displayValue }}</span>
     

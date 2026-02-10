@@ -30,7 +30,7 @@ async def send_reminders():
             ).first()
             
             if not progress or not progress.is_completed:
-                message = '👋 Привет! Не забудь отметить прогресс за эту неделю в Weeks Until Diploma!'
+                message = '👋 Привет! Не забудь отметить прогресс за эту неделю в DiplomMonitor!'
                 try:
                     await bot.send_message(chat_id=user.telegram_id, text=message)
                 except Exception as e:

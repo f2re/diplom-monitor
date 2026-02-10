@@ -29,28 +29,28 @@ export const useAuthStore = defineStore('auth', {
         await this.fetchCurrentUser();
         return true;
       } catch (err) {
-        this.error = err.response?.data?.detail || 'Login failed';
+        this.error = err.response?.data?.detail || 'Ошибка входа';
         return false;
       } finally {
         this.loading = false;
       }
     },
     async loginWithTelegram(telegramData) {
-      this.loading = true;
-      this.error = null;
-      try {
-        const response = await axios.post(`${API_URL}/auth/telegram`, telegramData);
-        this.token = response.data.access_token;
-        localStorage.setItem('token', this.token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
-        await this.fetchCurrentUser();
-        return true;
-      } catch (err) {
-        this.error = err.response?.data?.detail || 'Telegram login failed';
-        return false;
-      } finally {
-        this.loading = false;
-      }
+        this.loading = true;
+        this.error = null;
+        try {
+            const response = await axios.post(`${API_URL}/auth/telegram`, telegramData);
+            this.token = response.data.access_token;
+            localStorage.setItem('token', this.token);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+            await this.fetchCurrentUser();
+            return true;
+        } catch (err) {
+            this.error = err.response?.data?.detail || 'Ошибка входа через Telegram';
+            return false;
+        } finally {
+            this.loading = false;
+        }
     },
     async register(userData) {
       this.loading = true;
@@ -59,7 +59,7 @@ export const useAuthStore = defineStore('auth', {
         await axios.post(`${API_URL}/auth/register`, userData);
         return await this.login(userData.email, userData.password);
       } catch (err) {
-        this.error = err.response?.data?.detail || 'Registration failed';
+        this.error = err.response?.data?.detail || 'Ошибка регистрации';
         return false;
       } finally {
         this.loading = false;
@@ -88,7 +88,7 @@ export const useAuthStore = defineStore('auth', {
             this.user = response.data;
             return true;
         } catch (err) {
-            this.error = err.response?.data?.detail || 'Update failed';
+            this.error = err.response?.data?.detail || 'Ошибка обновления профиля';
             return false;
         } finally {
             this.loading = false;

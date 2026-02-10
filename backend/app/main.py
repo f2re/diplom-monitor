@@ -5,6 +5,11 @@ from app.api.user import router as user_router
 from app.api.grid import router as grid_router
 from app.core.config import settings
 from app.core.notifications import start_scheduler
+from app.database import engine
+from app.models import Base
+
+# Создание таблиц при старте (если их нет)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
