@@ -1,32 +1,104 @@
 # Weeks Until Diploma - Project Overview
 
-## Project Description
-A web application for student motivation that visualizes the number of weeks remaining until the diploma defense through an interactive grid.
+## 🌟 Vision
+A minimalist, high-impact web application designed to motivate students by visualizing the finite nature of time. Each week is a square; each square is an opportunity.
 
-## Core Objective
-To provide a visual tool that helps students realize the limited time left and motivates them to work regularly on their diploma.
+## 🎯 Core Objectives
+- **Visualize Time**: A grid representing the journey from start to diploma defense.
+- **Micro-Progress**: Low-friction marking of weekly achievements.
+- **Mindfulness**: Helping students stay aware of their timeline without overwhelming them.
 
-## Tech Stack (Updated)
-- **Frontend**: Vue.js 3 (Composition API, Vite, Tailwind CSS)
-- **Backend**: FastAPI (Python 3.10+)
-- **Database**: PostgreSQL (SQLAlchemy or Tortoise ORM)
-- **State Management**: Pinia (for Vue)
-- **Authentication**: JWT-based (FastAPI Users or custom implementation)
+## 🛠 Tech Stack
+- **Backend**: FastAPI (Python 3.11+)
+  - **ORM**: SQLAlchemy 2.0+ with Alembic for migrations.
+  - **Validation**: Pydantic v2.
+  - **Auth**: JWT-based (FastAPI Users or custom OAuth2 flow).
+- **Frontend**: Vue.js 3 (Composition API, `<script setup>`)
+  - **Build Tool**: Vite.
+  - **Styling**: Tailwind CSS + Headless UI / Radix Vue.
+  - **State**: Pinia.
+  - **Icons**: Lucide Vue.
+- **Database**: PostgreSQL.
+- **Testing**: Pytest (Backend), Vitest (Frontend).
 
-## Key Features
-1. **Interactive Week Grid**: A grid where each square represents one week (Default: Jan 2026 - May 2027).
-2. **User Profiles**: Simple registration with a personal emoji.
-3. **Progress Marking**: Clicking a square allows marking it as "completed" with the user's emoji and an optional note.
-4. **Special Periods**: Ability to mark weeks as Vacation or Business Trip (different colors).
-5. **Dynamic Settings**: Custom start dates, deadlines, and emoji changes.
+## 🏗 Project Structure (Proposed)
+```text
+diplom-monitor/
+├── backend/                # FastAPI application
+│   ├── app/
+│   │   ├── api/            # API routes (v1)
+│   │   ├── core/           # Config, security, constants
+│   │   ├── models/         # SQLAlchemy models
+│   │   ├── schemas/        # Pydantic models
+│   │   ├── services/       # Business logic
+│   │   └── main.py         # Entry point
+│   ├── migrations/         # Alembic migrations
+│   └── tests/              # Pytest suite
+├── frontend/               # Vue.js application
+│   ├── src/
+│   │   ├── api/            # Axios/Fetch clients
+│   │   ├── components/     # UI Components (Atomic Design)
+│   │   ├── composables/    # Reusable logic
+│   │   ├── stores/         # Pinia stores
+│   │   └── views/          # Page components
+│   └── tests/              # Vitest suite
+├── shared/                 # Shared constants/types (if applicable)
+├── docker-compose.yml      # Local development environment
+├── plan.md                 # Detailed development plan
+└── gemini.md               # This project guide
+```
 
-## Architectural Notes
-- **Mobile-First**: The UI must be optimized for mobile devices (320px+).
-- **Responsive Grid**: The week squares should adapt to screen size (32px to 48px).
-- **API-First**: Clear separation between the FastAPI backend and Vue.js frontend.
+## 📐 Standards & Conventions
 
-## Roadmap Highlights
-- **Phase 1**: Infrastructure & Database Schema (PostgreSQL).
-- **Phase 2**: FastAPI Backend (Auth, User Profile, Weeks API).
-- **Phase 3**: Vue.js Frontend (Grid visualization, Auth integration).
-- **Phase 4**: Polish & Special Periods logic.
+### General Principles
+- **KISS (Keep It Simple, Stupid)**: Avoid over-engineering. Use built-in solutions before adding libraries.
+- **DRY (Don't Repeat Yourself)**: Extract common logic into services (backend) or composables (frontend).
+- **Mobile-First**: Design and implement for small screens first (320px+).
+
+### Backend (Python/FastAPI)
+- **Style**: Follow **PEP 8**. Use **Black** for formatting and **Ruff** for linting.
+- **Type Hints**: Mandatory for all function signatures and complex variables.
+- **API Design**: RESTful principles. Use appropriate HTTP status codes.
+- **Async**: Use `async/await` for I/O bound operations (DB, external APIs).
+
+### Frontend (Vue/TS/JS)
+- **Style**: Follow **Vue.js Style Guide**. Use **Prettier** and **ESLint**.
+- **Composition API**: Use `<script setup>` syntax exclusively.
+- **Components**: Small, single-responsibility components. Use Tailwind for all styling.
+- **Props/Emits**: Clearly define props and emitted events.
+
+## 🗄 Database Schema (Draft)
+
+### Users
+- `id`: UUID (PK)
+- `email`: String (Unique)
+- `hashed_password`: String
+- `full_name`: String
+- `emoji`: String (Default user icon)
+- `settings`: JSONB (start_date, deadline_date, theme, etc.)
+
+### WeekProgress
+- `id`: UUID (PK)
+- `user_id`: UUID (FK)
+- `week_index`: Integer (Calculated from start_date)
+- `is_completed`: Boolean
+- `note`: Text (Optional)
+- `updated_at`: Timestamp
+
+### SpecialPeriods
+- `id`: UUID (PK)
+- `user_id`: UUID (FK)
+- `start_date`: Date
+- `end_date`: Date
+- `type`: Enum (vacation, work, sick, etc.)
+- `label`: String
+
+## 🚀 Roadmap Highlights
+1. **Phase 1: Foundation**: Project scaffolding, Docker setup, Auth boilerplate.
+2. **Phase 2: Core Grid**: Backend week calculation logic + Frontend grid rendering.
+3. **Phase 3: Interaction**: Marking weeks, adding notes, syncing with DB.
+4. **Phase 4: Personalization**: Profile settings, custom dates, emoji picker.
+5. **Phase 5: Polish**: Animations, PWA support, accessibility audit.
+
+---
+*Note: This document is the primary source of truth for AI agents. When in doubt, prioritize these instructions over general knowledge.*
