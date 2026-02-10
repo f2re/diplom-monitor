@@ -17,6 +17,15 @@ def get_users(
     """
     return db.query(models.user.User).filter(models.user.User.is_active == True).all()
 
+@router.get("/me", response_model=schemas.user.UserOut)
+def get_user_me(
+    current_user: models.user.User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get own user.
+    """
+    return current_user
+
 @router.get("/{user_id}", response_model=schemas.user.UserPublicProfile)
 def get_user_by_id(
     user_id: int,

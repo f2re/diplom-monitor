@@ -25,13 +25,19 @@ const toggleSettings = () => {
     <!-- Навигация -->
     <nav class="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
       <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-2.5 cursor-pointer" @click="showSettings = false">
-          <div class="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-200">
-            < GraduationCap class="w-6 h-6 text-white" />
+        <div class="flex items-center gap-3 cursor-pointer group" @click="showSettings = false">
+          <div class="relative">
+            <div class="absolute inset-0 bg-blue-400 blur-lg opacity-40 group-hover:opacity-70 transition-opacity"></div>
+            <div class="relative bg-gradient-to-br from-blue-600 to-indigo-700 p-2.5 rounded-2xl shadow-xl shadow-blue-200 transform group-hover:scale-110 transition-transform duration-300">
+              <GraduationCap class="w-6 h-6 text-white" />
+            </div>
           </div>
-          <span class="text-xl font-black tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            DiplomMonitor
-          </span>
+          <div class="flex flex-col">
+            <span class="text-xl font-black tracking-tighter bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+              DiplomMonitor
+            </span>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Management System</span>
+          </div>
         </div>
 
         <div v-if="authStore.isAuthenticated" class="flex items-center gap-2 sm:gap-4">
@@ -89,3 +95,14 @@ const toggleSettings = () => {
     </footer>
   </div>
 </template>
+
+<style>
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient {
+  animation: gradient 3s ease infinite;
+}
+</style>

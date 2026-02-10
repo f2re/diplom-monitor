@@ -20,3 +20,10 @@ class WeekProgressOut(WeekProgressBase):
 
     class Config:
         from_attributes = True
+
+class GridStats(BaseModel):
+    total_weeks: int
+    special_weeks: int
+    effective_weeks: int
+    completed_weeks: int
+    remaining_weeks: int

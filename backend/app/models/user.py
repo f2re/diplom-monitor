@@ -11,6 +11,7 @@ class User(Base):
     hashed_password = Column(String, nullable=True)
     full_name = Column(String, index=True)
     is_active = Column(Boolean(), default=True)
+    is_superuser = Column(Boolean(), default=False)
     
     # Profile settings
     start_date = Column(Date, nullable=True)

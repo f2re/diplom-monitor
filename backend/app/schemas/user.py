@@ -8,6 +8,7 @@ class UserBase(BaseModel):
     start_date: Optional[date] = None
     deadline: Optional[date] = None
     emoji: Optional[str] = "🎓"
+    is_superuser: bool = False
 
 class UserCreate(UserBase):
     email: EmailStr
@@ -19,6 +20,7 @@ class UserUpdate(BaseModel):
     deadline: Optional[date] = None
     emoji: Optional[str] = None
     password: Optional[str] = None
+    is_superuser: Optional[bool] = None
 
 class UserOut(UserBase):
     id: int
