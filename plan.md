@@ -28,10 +28,10 @@
 
 ## 3. ЭТАПЫ РАЗРАБОТКИ
 
-### ФАЗА 1: Инфраструктура (0.5 недели)
-- [ ] Настройка структуры `backend/` и `frontend/`.
-- [ ] Docker compose для локальной разработки (PostgreSQL).
-- [ ] Базовый CI/CD (linting, tests).
+### ФАЗА 1: Инфраструктура (0.5 недели) [COMPLETED]
+- [x] Настройка структуры `backend/` и `frontend/`.
+- [x] Docker compose для локальной разработки (PostgreSQL).
+- [x] Базовый CI/CD (linting, tests).
 
 ### ФАЗА 2: Backend API (1.5 недели)
 - [ ] Модели SQLAlchemy и миграции Alembic.
