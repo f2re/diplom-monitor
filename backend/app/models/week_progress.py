@@ -8,7 +8,7 @@ class WeekProgress(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     week_start_date = Column(Date, nullable=False)
-    is_completed = Column(Boolean, default=False)
+    is_completed = Column(Boolean, default=False, nullable=False)
     note = Column(String, nullable=True)
 
     user = relationship("User", back_populates="week_progressions")

@@ -8,6 +8,13 @@ from app.api import deps
 
 router = APIRouter()
 
+def get_admin_user(db: Session):
+    admin = db.query(models.user.User).filter(models.user.User.is_superuser == True).first()
+    if not admin:
+        # Fallback to first user if no superuser exists yet (should not happen with new registration logic)
+        admin = db.query(models.user.User).first()
+    return admin
+
 @router.get("/weeks", response_model=List[schemas.week_progress.WeekProgressOut])
 def get_weeks(
     db: Session = Depends(deps.get_db),
@@ -77,10 +84,13 @@ def get_special_periods(
     current_user: models.user.User = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Get all special periods for current user.
+    Get all special periods. Now global, so returning admin's periods.
     """
+    admin = get_admin_user(db)
+    if not admin:
+        return []
     return db.query(models.special_period.SpecialPeriod).filter(
-        models.special_period.SpecialPeriod.user_id == current_user.id
+        models.special_period.SpecialPeriod.user_id == admin.id
     ).all()
 
 @router.get("/special-periods/{user_id}", response_model=List[schemas.special_period.SpecialPeriodOut])
@@ -90,11 +100,9 @@ def get_user_special_periods(
     current_user: models.user.User = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Get all special periods for a specific user.
+    Get all special periods for a specific user. Actually returns global ones.
     """
-    return db.query(models.special_period.SpecialPeriod).filter(
-        models.special_period.SpecialPeriod.user_id == user_id
-    ).all()
+    return get_special_periods(db, current_user)
 
 @router.post("/special-periods", response_model=schemas.special_period.SpecialPeriodOut)
 def create_special_period(
@@ -104,15 +112,14 @@ def create_special_period(
     current_user: models.user.User = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Create special period. Only for self or admin.
+    Create special period. Only for admin.
     """
-    # If user_id is provided in schema, check permissions
-    # But SpecialPeriodCreate doesn't have user_id, it's inferred from context or provided?
-    # Let's check schemas/special_period.py
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Only admins can manage special periods")
     
     period = models.special_period.SpecialPeriod(
         **period_in.model_dump(),
-        user_id=current_user.id # Default to self
+        user_id=current_user.id
     )
     db.add(period)
     db.commit()
@@ -121,21 +128,22 @@ def create_special_period(
 
 @router.delete("/special-periods/{period_id}")
 def delete_special_period(
-    *,
-    db: Session = Depends(deps.get_db),
     period_id: int,
+    db: Session = Depends(deps.get_db),
     current_user: models.user.User = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Delete special period.
+    Delete special period. Only for admin.
     """
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Only admins can manage special periods")
+    
     period = db.query(models.special_period.SpecialPeriod).filter(
         models.special_period.SpecialPeriod.id == period_id
     ).first()
+    
     if not period:
         raise HTTPException(status_code=404, detail="Period not found")
-    if period.user_id != current_user.id and not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
     
     db.delete(period)
     db.commit()
@@ -148,13 +156,14 @@ def get_user_stats(
     current_user: models.user.User = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Get grid statistics for user.
+    Get grid statistics for user. Uses global settings from admin.
     """
-    user = db.query(models.user.User).filter(models.user.User.id == user_id).first()
-    if not user:
+    target_user = db.query(models.user.User).filter(models.user.User.id == user_id).first()
+    if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    if not user.start_date or not user.deadline:
+    admin = get_admin_user(db)
+    if not admin or not admin.start_date or not admin.deadline:
         return {
             "total_weeks": 0,
             "special_weeks": 0,
@@ -163,25 +172,31 @@ def get_user_stats(
             "remaining_weeks": 0
         }
     
-    total_days = (user.deadline - user.start_date).days
+    # Use admin's dates as global settings
+    global_start = admin.start_date
+    global_deadline = admin.deadline
+    
+    total_days = (global_deadline - global_start).days
     total_weeks = (total_days // 7) + 1
     
+    # Use admin's special periods as global settings
     special_periods = db.query(models.special_period.SpecialPeriod).filter(
-        models.special_period.SpecialPeriod.user_id == user.id
+        models.special_period.SpecialPeriod.user_id == admin.id
     ).all()
     
     special_days = 0
     for p in special_periods:
-        p_start = max(p.start_date, user.start_date)
-        p_end = min(p.end_date, user.deadline)
+        p_start = max(p.start_date, global_start)
+        p_end = min(p.end_date, global_deadline)
         if p_start <= p_end:
             special_days += (p_end - p_start).days + 1
             
     special_weeks = special_days // 7
     effective_weeks = max(0, total_weeks - special_weeks)
     
+    # Completed weeks are still per-user
     completed_weeks = db.query(models.week_progress.WeekProgress).filter(
-        models.week_progress.WeekProgress.user_id == user.id,
+        models.week_progress.WeekProgress.user_id == target_user.id,
         models.week_progress.WeekProgress.is_completed == True
     ).count()
     

@@ -54,10 +54,18 @@ def update_user_me(
     
     if user_in.full_name is not None:
         current_user.full_name = user_in.full_name
+    
+    # Only superusers can update start_date and deadline
     if user_in.start_date is not None:
+        if not current_user.is_superuser:
+            raise HTTPException(status_code=403, detail="Only admins can change the start date")
         current_user.start_date = user_in.start_date
+        
     if user_in.deadline is not None:
+        if not current_user.is_superuser:
+            raise HTTPException(status_code=403, detail="Only admins can change the deadline")
         current_user.deadline = user_in.deadline
+        
     if user_in.emoji is not None:
         current_user.emoji = user_in.emoji
     

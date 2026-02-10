@@ -10,8 +10,8 @@ class User(Base):
     telegram_id = Column(BigInteger, unique=True, index=True, nullable=True)
     hashed_password = Column(String, nullable=True)
     full_name = Column(String, index=True)
-    is_active = Column(Boolean(), default=True)
-    is_superuser = Column(Boolean(), default=False)
+    is_active = Column(Boolean(), default=True, nullable=False)
+    is_superuser = Column(Boolean(), default=False, nullable=False)
     
     # Profile settings
     start_date = Column(Date, nullable=True)

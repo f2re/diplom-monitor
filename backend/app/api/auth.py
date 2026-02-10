@@ -48,6 +48,10 @@ def register_user(
             detail="The user with this username already exists in the system.",
         )
     
+    # Check if this is the first user
+    user_count = db.query(models.user.User).count()
+    is_superuser = user_count == 0
+
     db_user = models.user.User(
         email=user_in.email,
         hashed_password=security.get_password_hash(user_in.password),
@@ -55,6 +59,7 @@ def register_user(
         start_date=user_in.start_date,
         deadline=user_in.deadline,
         emoji=user_in.emoji,
+        is_superuser=is_superuser,
     )
     db.add(db_user)
     db.commit()
@@ -86,12 +91,17 @@ def login_telegram(
     user = db.query(models.user.User).filter(models.user.User.telegram_id == telegram_data.id).first()
     
     if not user:
+        # Check if this is the first user
+        user_count = db.query(models.user.User).count()
+        is_superuser = user_count == 0
+
         # Create new user
         full_name = f"{telegram_data.first_name or ''} {telegram_data.last_name or ''}".strip()
         user = models.user.User(
             telegram_id=telegram_data.id,
             full_name=full_name or telegram_data.username,
             is_active=True,
+            is_superuser=is_superuser,
         )
         db.add(user)
         db.commit()

@@ -86,7 +86,11 @@ const handleDeletePeriod = async (id) => {
             <input 
               v-model="form.start_date" 
               type="date" 
-              class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              :disabled="!authStore.user?.is_superuser"
+              :class="[
+                'w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all',
+                !authStore.user?.is_superuser ? 'opacity-70 cursor-not-allowed bg-gray-100' : ''
+              ]"
             />
             <Calendar class="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
           </div>
@@ -98,11 +102,22 @@ const handleDeletePeriod = async (id) => {
             <input 
               v-model="form.deadline" 
               type="date" 
-              class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              :disabled="!authStore.user?.is_superuser"
+              :class="[
+                'w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all',
+                !authStore.user?.is_superuser ? 'opacity-70 cursor-not-allowed bg-gray-100' : ''
+              ]"
             />
             <Clock class="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
           </div>
         </div>
+      </div>
+
+      <div v-if="!authStore.user?.is_superuser" class="flex items-start gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+        <Info class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+        <p class="text-xs text-blue-700 leading-relaxed font-medium">
+          Даты начала и окончания диплома устанавливаются администратором глобально для всех пользователей.
+        </p>
       </div>
 
       <div class="space-y-3">
@@ -151,7 +166,7 @@ const handleDeletePeriod = async (id) => {
       </div>
       
       <p class="text-sm text-gray-500 font-medium">
-        Добавьте отпуска, стажировки или каникулы. Эти недели будут вычтены из общего срока подготовки.
+        {{ authStore.user?.is_superuser ? 'Добавьте отпуска, стажировки или каникулы для всех пользователей.' : 'Глобальные периоды отсутствия (отпуска, стажировки), установленные администратором.' }}
       </p>
 
       <!-- Список существующих периодов -->
@@ -165,14 +180,14 @@ const handleDeletePeriod = async (id) => {
             <p class="text-xs text-gray-500 mt-1">{{ p.start_date }} — {{ p.end_date }}</p>
             <p v-if="p.description" class="text-xs italic text-gray-400 mt-0.5">{{ p.description }}</p>
           </div>
-          <button @click="handleDeletePeriod(p.id)" class="p-2 text-gray-400 hover:text-red-500 transition-colors">
+          <button v-if="authStore.user?.is_superuser" @click="handleDeletePeriod(p.id)" class="p-2 text-gray-400 hover:text-red-500 transition-colors">
             <Trash2 class="w-5 h-5" />
           </button>
         </div>
       </div>
 
-      <!-- Форма добавления -->
-      <div class="p-6 bg-blue-50/50 rounded-3xl border border-blue-100/50 space-y-4">
+      <!-- Форма добавления (Admin Only) -->
+      <div v-if="authStore.user?.is_superuser" class="p-6 bg-blue-50/50 rounded-3xl border border-blue-100/50 space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div class="space-y-1">
             <label class="text-[10px] font-black text-blue-600 uppercase">С</label>
@@ -197,14 +212,14 @@ const handleDeletePeriod = async (id) => {
           class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
         >
           <Plus class="w-4 h-4" />
-          Добавить период
+          Добавить глобальный период
         </button>
       </div>
 
       <div class="flex items-start gap-3 p-4 bg-orange-50 rounded-2xl border border-orange-100">
         <Info class="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
         <p class="text-xs text-orange-700 leading-relaxed font-medium">
-          Изменения периодов мгновенно пересчитывают ваш "чистый" прогресс в основной сетке.
+          {{ authStore.user?.is_superuser ? 'Ваши изменения мгновенно пересчитают прогресс для ВСЕХ пользователей системы.' : 'Данные периоды вычитаются из общего срока подготовки у всех пользователей.' }}
         </p>
       </div>
     </div>
