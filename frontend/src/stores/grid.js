@@ -63,31 +63,29 @@ export const useGridStore = defineStore('grid', {
       }
     },
     async fetchGridData(userId = null) {
+      const authStore = useAuthStore();
+      const targetId = userId || authStore.user?.id;
+      
+      if (!targetId) {
+        // Still fetch global config even if no user is logged in yet
+        await this.fetchGlobalConfig();
+        return;
+      }
+
       this.loading = true;
       try {
-        const authStore = useAuthStore();
-        const targetId = userId || authStore.user?.id;
-        
-        // Fetch config and all progress in parallel with user data
-        const promises = [
+        // Fetch everything including user-specific data
+        const [config, progress, periods, stats, weeks] = await Promise.all([
           this.fetchGlobalConfig(),
           this.fetchAllProgress(),
           axios.get(`${API_URL}/grid/special-periods/${targetId}`),
-          axios.get(`${API_URL}/grid/stats/${targetId}`)
-        ];
+          axios.get(`${API_URL}/grid/stats/${targetId}`),
+          axios.get(`${API_URL}/grid/weeks/${targetId}`)
+        ]);
 
-        if (targetId) {
-          promises.push(axios.get(`${API_URL}/grid/weeks/${targetId}`));
-        }
-
-        const results = await Promise.all(promises);
-        
-        // results indices: 0:config, 1:allProgress, 2:periods, 3:stats, 4:weeks (if targetId)
-        this.specialPeriods = results[2].data;
-        this.stats = results[3].data;
-        if (targetId && results[4]) {
-          this.weeks = results[4].data;
-        }
+        this.specialPeriods = periods.data;
+        this.stats = stats.data;
+        this.weeks = weeks.data;
       } catch (err) {
         this.error = err.response?.data?.detail || 'Ошибка загрузки данных сетки';
       } finally {
@@ -110,8 +108,10 @@ export const useGridStore = defineStore('grid', {
         }
         // Refresh stats after updating week
         const authStore = useAuthStore();
-        const statsRes = await axios.get(`${API_URL}/grid/stats/${authStore.user.id}`);
-        this.stats = statsRes.data;
+        if (authStore.user?.id) {
+          const statsRes = await axios.get(`${API_URL}/grid/stats/${authStore.user.id}`);
+          this.stats = statsRes.data;
+        }
         return true;
       } catch (err) {
         this.error = err.response?.data?.detail || 'Ошибка обновления недели';
@@ -124,8 +124,10 @@ export const useGridStore = defineStore('grid', {
         this.specialPeriods.push(response.data);
         // Refresh stats
         const authStore = useAuthStore();
-        const statsRes = await axios.get(`${API_URL}/grid/stats/${authStore.user.id}`);
-        this.stats = statsRes.data;
+        if (authStore.user?.id) {
+          const statsRes = await axios.get(`${API_URL}/grid/stats/${authStore.user.id}`);
+          this.stats = statsRes.data;
+        }
         return true;
       } catch (err) {
         this.error = err.response?.data?.detail || 'Ошибка добавления периода';
@@ -138,8 +140,10 @@ export const useGridStore = defineStore('grid', {
         this.specialPeriods = this.specialPeriods.filter(p => p.id !== periodId);
         // Refresh stats
         const authStore = useAuthStore();
-        const statsRes = await axios.get(`${API_URL}/grid/stats/${authStore.user.id}`);
-        this.stats = statsRes.data;
+        if (authStore.user?.id) {
+          const statsRes = await axios.get(`${API_URL}/grid/stats/${authStore.user.id}`);
+          this.stats = statsRes.data;
+        }
         return true;
       } catch (err) {
         this.error = err.response?.data?.detail || 'Ошибка удаления периода';

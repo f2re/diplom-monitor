@@ -10,12 +10,12 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=diplom_monitor
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
 
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/diplom_monitor
     depends_on:
@@ -24,7 +24,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "5173:5173"
+      - "127.0.0.1:5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules

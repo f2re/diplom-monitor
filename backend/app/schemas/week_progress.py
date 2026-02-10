@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 
 class WeekProgressBase(BaseModel):
     week_start_date: date
@@ -31,3 +31,8 @@ class GridStats(BaseModel):
 class GridConfig(BaseModel):
     start_date: Optional[date] = None
     deadline: Optional[date] = None
+
+class UserWeekProgress(BaseModel):
+    user_id: int
+    emoji: str
+    completions: List[date]

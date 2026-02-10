@@ -11,9 +11,49 @@ router = APIRouter()
 def get_admin_user(db: Session):
     admin = db.query(models.user.User).filter(models.user.User.is_superuser == True).first()
     if not admin:
-        # Fallback to first user if no superuser exists yet (should not happen with new registration logic)
+        # Fallback to first user if no superuser exists yet
         admin = db.query(models.user.User).first()
     return admin
+
+@router.get("/config", response_model=schemas.week_progress.GridConfig)
+def get_grid_config(
+    db: Session = Depends(deps.get_db),
+    current_user: models.user.User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get global grid configuration (start date and deadline).
+    """
+    admin = get_admin_user(db)
+    if not admin:
+        return {"start_date": None, "deadline": None}
+    return {
+        "start_date": admin.start_date,
+        "deadline": admin.deadline
+    }
+
+@router.get("/all-progress", response_model=List[schemas.week_progress.UserWeekProgress])
+def get_all_progress(
+    db: Session = Depends(deps.get_db),
+    current_user: models.user.User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get progress for all active users.
+    """
+    users = db.query(models.user.User).filter(models.user.User.is_active == True).all()
+    results = []
+    for user in users:
+        completions = db.query(models.week_progress.WeekProgress.week_start_date).filter(
+            models.week_progress.WeekProgress.user_id == user.id,
+            models.week_progress.WeekProgress.is_completed == True
+        ).all()
+        # Extract dates from list of tuples
+        completion_dates = [c[0] for c in completions]
+        results.append({
+            "user_id": user.id,
+            "emoji": user.emoji or "🎓",
+            "completions": completion_dates
+        })
+    return results
 
 @router.get("/weeks", response_model=List[schemas.week_progress.WeekProgressOut])
 def get_weeks(
