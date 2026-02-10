@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -7,6 +7,28 @@ from app.api import deps
 from app.core import security
 
 router = APIRouter()
+
+@router.get("/", response_model=List[schemas.user.UserPublic])
+def get_users(
+    db: Session = Depends(deps.get_db),
+) -> Any:
+    """
+    Get all active users.
+    """
+    return db.query(models.user.User).filter(models.user.User.is_active == True).all()
+
+@router.get("/{user_id}", response_model=schemas.user.UserPublicProfile)
+def get_user_by_id(
+    user_id: int,
+    db: Session = Depends(deps.get_db),
+) -> Any:
+    """
+    Get public profile of a user.
+    """
+    user = db.query(models.user.User).filter(models.user.User.id == user_id, models.user.User.is_active == True).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 @router.put("/me", response_model=schemas.user.UserOut)
 def update_user_me(

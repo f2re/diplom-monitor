@@ -26,7 +26,13 @@ def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
-    user = db.query(User).filter(User.email == token_data.sub).first()
+    if token_data.sub.startswith("tg_"):
+        tg_id = int(token_data.sub.replace("tg_", ""))
+        user = db.query(User).filter(User.telegram_id == tg_id).first()
+    else:
+        user = db.query(User).filter(User.email == token_data.sub).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
     return user

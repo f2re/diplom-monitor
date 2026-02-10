@@ -26,11 +26,29 @@ const props = defineProps({
 
 const emit = defineEmits(['click']);
 
+const isPast = computed(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - today.weekday); // Simple current monday check
+  
+  const weekStart = new Date(props.startDate);
+  return weekStart < monday;
+});
+
+const isMissed = computed(() => {
+  return isPast.value && (!props.progress || !props.progress.is_completed);
+});
+
 const cellClasses = computed(() => {
   const base = 'relative w-full aspect-square rounded-lg border-2 flex items-center justify-center transition-all duration-200 cursor-pointer text-xs font-bold shadow-sm hover:shadow-md hover:scale-110 active:scale-95 z-10';
   
   if (props.progress?.is_completed) {
     return `${base} bg-green-500 border-green-600 text-white hover:bg-green-600`;
+  }
+
+  if (isMissed.value) {
+    return `${base} bg-slate-900 border-slate-950 text-white hover:bg-black`;
   }
   
   if (props.specialPeriod) {
@@ -45,8 +63,8 @@ const cellClasses = computed(() => {
 });
 
 const displayValue = computed(() => {
-  // We don't have emoji in backend WeekProgress model currently, so just use checkmark or number
   if (props.progress?.is_completed) return '✓';
+  if (isMissed.value) return '✕';
   if (props.specialPeriod) return '!';
   return props.weekNumber + 1;
 });
@@ -56,7 +74,7 @@ const displayValue = computed(() => {
   <div 
     :class="cellClasses"
     @click="emit('click', startDate, weekNumber)"
-    :title="`Week ${weekNumber + 1} (${startDate})${progress ? ': Completed' : ''}${specialPeriod ? ': ' + specialPeriod.period_type : ''}`"
+    :title="`Week ${weekNumber + 1} (${startDate})${progress?.is_completed ? ': Completed' : isMissed ? ': Missed' : ''}${specialPeriod ? ': ' + specialPeriod.period_type : ''}`"
   >
     <span class="relative z-20">{{ displayValue }}</span>
     

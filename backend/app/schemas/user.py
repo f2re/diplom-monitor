@@ -3,13 +3,14 @@ from typing import Optional
 from datetime import date
 
 class UserBase(BaseModel):
-    email: EmailStr
+    email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     start_date: Optional[date] = None
     deadline: Optional[date] = None
     emoji: Optional[str] = "🎓"
 
 class UserCreate(UserBase):
+    email: EmailStr
     password: str
 
 class UserUpdate(BaseModel):
@@ -22,9 +23,22 @@ class UserUpdate(BaseModel):
 class UserOut(UserBase):
     id: int
     is_active: bool
+    telegram_id: Optional[int] = None
 
     class Config:
         from_attributes = True
+
+class UserPublic(BaseModel):
+    id: int
+    full_name: Optional[str] = None
+    emoji: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class UserPublicProfile(UserPublic):
+    start_date: Optional[date] = None
+    deadline: Optional[date] = None
 
 class Token(BaseModel):
     access_token: str
@@ -32,3 +46,12 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     sub: Optional[str] = None
+
+class TelegramAuth(BaseModel):
+    id: int
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    username: Optional[str] = None
+    photo_url: Optional[str] = None
+    auth_date: int
+    hash: str

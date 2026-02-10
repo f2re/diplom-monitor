@@ -69,3 +69,41 @@ def read_user_me(
     Get current user.
     """
     return current_user
+
+@router.post("/telegram", response_model=schemas.user.Token)
+def login_telegram(
+    *,
+    db: Session = Depends(deps.get_db),
+    telegram_data: schemas.user.TelegramAuth,
+) -> Any:
+    """
+    Login with Telegram.
+    """
+    if not security.verify_telegram_hash(telegram_data.model_dump(), settings.TELEGRAM_BOT_TOKEN):
+        raise HTTPException(status_code=400, detail="Invalid Telegram hash")
+    
+    # Check if user exists by telegram_id
+    user = db.query(models.user.User).filter(models.user.User.telegram_id == telegram_data.id).first()
+    
+    if not user:
+        # Create new user
+        full_name = f"{telegram_data.first_name or ''} {telegram_data.last_name or ''}".strip()
+        user = models.user.User(
+            telegram_id=telegram_data.id,
+            full_name=full_name or telegram_data.username,
+            is_active=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    # Use telegram_id as sub if email is not available
+    token_subject = user.email if user.email else f"tg_{user.telegram_id}"
+    
+    return {
+        "access_token": security.create_access_token(
+            token_subject, expires_delta=access_token_expires
+        ),
+        "token_type": "bearer",
+    }

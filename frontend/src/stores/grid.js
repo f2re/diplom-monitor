@@ -26,12 +26,17 @@ export const useGridStore = defineStore('grid', {
     }
   },
   actions: {
-    async fetchGridData() {
+    async fetchGridData(userId = null) {
       this.loading = true;
       try {
+        const authStore = useAuthStore();
+        const targetId = userId || authStore.user?.id;
+        
+        if (!targetId) return;
+
         const [weeksRes, periodsRes] = await Promise.all([
-          axios.get(`${API_URL}/grid/weeks`),
-          axios.get(`${API_URL}/grid/special-periods`)
+          axios.get(`${API_URL}/grid/weeks/${targetId}`),
+          axios.get(`${API_URL}/grid/special-periods/${targetId}`)
         ]);
         this.weeks = weeksRes.data;
         this.specialPeriods = periodsRes.data;

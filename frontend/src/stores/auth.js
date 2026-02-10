@@ -35,6 +35,23 @@ export const useAuthStore = defineStore('auth', {
         this.loading = false;
       }
     },
+    async loginWithTelegram(telegramData) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await axios.post(`${API_URL}/auth/telegram`, telegramData);
+        this.token = response.data.access_token;
+        localStorage.setItem('token', this.token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+        await this.fetchCurrentUser();
+        return true;
+      } catch (err) {
+        this.error = err.response?.data?.detail || 'Telegram login failed';
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
     async register(userData) {
       this.loading = true;
       this.error = null;

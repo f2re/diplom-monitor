@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { LogIn, UserPlus, Loader2, AlertCircle } from 'lucide-vue-next';
 
@@ -26,6 +26,32 @@ const toggleMode = () => {
   isLogin.value = !isLogin.value;
   authStore.error = null;
 };
+
+const handleTelegramAuth = async (user) => {
+  await authStore.loginWithTelegram(user);
+};
+
+onMounted(() => {
+  window.onTelegramAuth = handleTelegramAuth;
+  
+  const script = document.createElement('script');
+  script.src = 'https://telegram.org/js/telegram-widget.js?22';
+  script.setAttribute('data-telegram-login', 'weeks_until_diploma_bot');
+  script.setAttribute('data-size', 'large');
+  script.setAttribute('data-radius', '12');
+  script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+  script.setAttribute('data-request-access', 'write');
+  script.async = true;
+  
+  const container = document.getElementById('telegram-login-container');
+  if (container) {
+    container.appendChild(script);
+  }
+});
+
+onUnmounted(() => {
+  delete window.onTelegramAuth;
+});
 </script>
 
 <template>
@@ -117,16 +143,20 @@ const toggleMode = () => {
 
       <div class="relative py-4">
         <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
-        <div class="relative flex justify-center text-sm uppercase"><span class="bg-white px-2 text-gray-400">Or</span></div>
+        <div class="relative flex justify-center text-sm uppercase"><span class="bg-white px-2 text-gray-400">Or continue with</span></div>
       </div>
 
-      <button 
-        type="button" 
-        @click="toggleMode"
-        class="w-full bg-white hover:bg-gray-50 text-gray-600 font-semibold py-3 rounded-xl border border-gray-200 transition-all"
-      >
-        {{ isLogin ? 'Need an account? Register' : 'Already have an account? Login' }}
-      </button>
+      <div id="telegram-login-container" class="flex justify-center min-h-[40px] transition-all duration-300"></div>
+
+      <div class="pt-4 mt-4 border-t border-gray-50">
+        <button 
+          type="button" 
+          @click="toggleMode"
+          class="w-full bg-white hover:bg-gray-50 text-gray-600 font-semibold py-3 rounded-xl border border-gray-200 transition-all"
+        >
+          {{ isLogin ? 'Need an account? Register' : 'Already have an account? Login' }}
+        </button>
+      </div>
     </form>
   </div>
 </template>

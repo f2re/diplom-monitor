@@ -20,3 +20,23 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     return PWD_CONTEXT.hash(password)
+
+import hmac
+import hashlib
+
+def verify_telegram_hash(data: dict, bot_token: str) -> bool:
+    telegram_hash = data.get("hash")
+    if not telegram_hash:
+        return False
+    
+    # Sort keys and create data_check_string
+    data_list = []
+    for key, value in sorted(data.items()):
+        if key != "hash" and value is not None:
+            data_list.append(f"{key}={value}")
+    data_check_string = "\n".join(data_list)
+    
+    secret_key = hashlib.sha256(bot_token.encode()).digest()
+    hash_value = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+    
+    return hash_value == telegram_hash

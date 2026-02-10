@@ -1,18 +1,45 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useGridStore } from '../stores/grid';
+import { useUsersStore } from '../stores/users';
 import WeekCell from './WeekCell.vue';
-import { X, Save, Calendar, Clock, CheckCircle2 } from 'lucide-vue-next';
+import { X, Save, Calendar, Clock, CheckCircle2, Users, User as UserIcon, Loader2 } from 'lucide-vue-next';
+import axios from 'axios';
 
 const authStore = useAuthStore();
 const gridStore = useGridStore();
+const usersStore = useUsersStore();
+
+const selectedUserId = ref(null);
+const targetUser = ref(null);
+const loadingUser = ref(false);
+
+const isOwnGrid = computed(() => !selectedUserId.value || selectedUserId.value === authStore.user?.id);
+
+// Fetch target user profile (dates)
+const fetchTargetUser = async (userId) => {
+  if (!userId || userId === authStore.user?.id) {
+    targetUser.value = authStore.user;
+    return;
+  }
+  loadingUser.value = true;
+  try {
+    const response = await axios.get(`http://localhost:8000/users/${userId}`);
+    targetUser.value = response.data;
+  } catch (err) {
+    console.error('Failed to fetch user profile', err);
+  } finally {
+    loadingUser.value = false;
+  }
+};
 
 const weeks = computed(() => {
-  if (!authStore.user?.start_date || !authStore.user?.deadline) return [];
+  const user = targetUser.value;
+  if (!user?.start_date || !user?.deadline) return [];
   
-  const start = new Date(authStore.user.start_date);
-  const end = new Date(authStore.user.deadline);
+  const start = new Date(user.start_date);
+  const end = new Date(user.deadline);
   
   const weeksList = [];
   let current = new Date(start);
@@ -32,13 +59,22 @@ const weeks = computed(() => {
 
 const totalWeeks = computed(() => weeks.value.length);
 
+const currentWeekStart = computed(() => {
+  const today = new Date();
+  const day = today.getDay();
+  const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Monday
+  const monday = new Date(today.setDate(diff));
+  return monday.toISOString().split('T')[0];
+});
+
 const currentWeekIndex = computed(() => {
-  if (!authStore.user?.start_date) return -1;
-  const start = new Date(authStore.user.start_date);
-  const now = new Date();
-  const diffTime = now - start;
-  if (diffTime < 0) return -1;
-  return Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+    const user = targetUser.value;
+    if (!user?.start_date) return -1;
+    const start = new Date(user.start_date);
+    const now = new Date();
+    const diffTime = now - start;
+    if (diffTime < 0) return -1;
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
 });
 
 const completedWeeks = computed(() => {
@@ -59,6 +95,10 @@ const editForm = ref({
 });
 
 const openEditModal = (startDate, weekNumber) => {
+  // Allow edit only for own grid AND current week
+  if (!isOwnGrid.value) return;
+  if (startDate !== currentWeekStart.value) return;
+
   const existing = gridStore.getWeekByDate(startDate);
   selectedWeekDate.value = startDate;
   selectedWeekNumber.value = weekNumber;
@@ -82,33 +122,73 @@ const saveWeekProgress = async () => {
   if (success) closeEditModal();
 };
 
-onMounted(() => {
-  gridStore.fetchGridData();
+onMounted(async () => {
+  selectedUserId.value = authStore.user?.id;
+  targetUser.value = authStore.user;
+  await Promise.all([
+    gridStore.fetchGridData(),
+    usersStore.fetchUsers()
+  ]);
+});
+
+watch(selectedUserId, async (newId) => {
+  await fetchTargetUser(newId);
+  await gridStore.fetchGridData(newId);
 });
 </script>
 
 <template>
   <div class="space-y-8 max-w-6xl mx-auto px-4 py-8">
+    <!-- User Selector -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-100 p-2 rounded-lg">
+                <Users class="w-5 h-5 text-indigo-600" />
+            </div>
+            <span class="font-bold text-gray-700">View Grid:</span>
+            <select 
+                v-model="selectedUserId"
+                class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+            >
+                <option :value="authStore.user?.id">My Private Grid</option>
+                <optgroup label="Public Grids">
+                    <option v-for="user in usersStore.users.filter(u => u.id !== authStore.user?.id)" :key="user.id" :value="user.id">
+                        {{ user.emoji }} {{ user.full_name }}
+                    </option>
+                </optgroup>
+            </select>
+        </div>
+        
+        <div v-if="!isOwnGrid" class="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-xl text-sm font-bold border border-amber-100">
+            <Clock class="w-4 h-4" />
+            Read-only Mode
+        </div>
+    </div>
+
     <!-- Empty state if dates not set -->
-    <div v-if="!authStore.user?.start_date || !authStore.user?.deadline" class="bg-blue-50 border-2 border-blue-200 rounded-3xl p-12 text-center">
-        <h2 class="text-2xl font-black text-blue-900 mb-4">Set your dates to begin tracking! 🗓️</h2>
-        <p class="text-blue-700 font-medium max-w-md mx-auto mb-8">
-            To generate your diploma progress grid, we need to know your start date and defense deadline.
-        </p>
-        <!-- For now just a message, we'll add SettingsForm soon -->
-        <p class="text-sm text-blue-500 italic">Profile settings coming soon...</p>
+    <div v-if="!targetUser?.start_date || !targetUser?.deadline" class="bg-blue-50 border-2 border-blue-200 rounded-3xl p-12 text-center">
+        <Loader2 v-if="loadingUser" class="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+        <template v-else>
+            <h2 class="text-2xl font-black text-blue-900 mb-4">Dates not set 🗓️</h2>
+            <p class="text-blue-700 font-medium max-w-md mx-auto mb-8">
+                {{ isOwnGrid ? 'Please set your start date and deadline in settings.' : 'This user hasn\'t set their diploma dates yet.' }}
+            </p>
+        </template>
     </div>
 
     <template v-else>
         <!-- Header/Dashboard -->
-        <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-8 items-center justify-between">
+        <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-8 items-center justify-between transition-all">
           <div class="space-y-2 text-center md:text-left">
-            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">
-              Hello, {{ authStore.user?.full_name || 'Student' }}! 👋
-            </h1>
+            <div class="flex items-center justify-center md:justify-start gap-3">
+                <span class="text-4xl">{{ targetUser?.emoji }}</span>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">
+                    {{ isOwnGrid ? 'Your Progress' : targetUser?.full_name }}
+                </h1>
+            </div>
             <p class="text-gray-500 font-medium flex items-center gap-2 justify-center md:justify-start">
               <Calendar class="w-4 h-4" />
-              {{ totalWeeks }} weeks in your journey
+              {{ totalWeeks }} weeks journey
             </p>
           </div>
 
@@ -129,7 +209,7 @@ onMounted(() => {
                 <CheckCircle2 class="w-5 h-5" />
                 <span>{{ completedWeeks }} completed</span>
               </div>
-              <div class="flex items-center gap-2 text-blue-600 font-bold">
+              <div class="flex items-center gap-2 text-slate-800 font-bold">
                 <Clock class="w-5 h-5" />
                 <span>{{ totalWeeks - completedWeeks }} remaining</span>
               </div>
@@ -147,7 +227,7 @@ onMounted(() => {
               :start-date="week.startDate"
               :progress="gridStore.getWeekByDate(week.startDate)"
               :special-period="gridStore.isSpecialPeriod(week.startDate)"
-              :is-current="week.index === currentWeekIndex"
+              :is-current="week.startDate === currentWeekStart"
               @click="openEditModal"
             />
           </div>
@@ -159,6 +239,10 @@ onMounted(() => {
               <span>Completed</span>
             </div>
             <div class="flex items-center gap-2">
+                <div class="w-4 h-4 bg-slate-900 rounded shadow-sm text-white flex items-center justify-center text-[10px]">✕</div>
+                <span>Missed</span>
+            </div>
+            <div class="flex items-center gap-2">
               <div class="w-4 h-4 bg-blue-50 border border-blue-400 rounded shadow-sm"></div>
               <span>Current Week</span>
             </div>
@@ -166,15 +250,14 @@ onMounted(() => {
               <div class="w-4 h-4 bg-amber-100 border border-amber-300 rounded shadow-sm"></div>
               <span>Special Period</span>
             </div>
-            <div class="flex items-center gap-2">
-              <div class="w-4 h-4 bg-white border border-gray-100 rounded shadow-sm"></div>
-              <span>Future Week</span>
-            </div>
+          </div>
+          <div v-if="isOwnGrid" class="mt-4 text-xs text-gray-400 italic">
+            * You can only mark progress for the current week.
           </div>
         </div>
     </template>
 
-    <!-- Edit Modal -->
+    <!-- Edit Modal (same as before) -->
     <div v-if="selectedWeekDate !== null" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
         <div class="bg-gray-50 px-8 py-6 flex items-center justify-between border-b">
@@ -248,19 +331,9 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Custom grid column count for larger screens */
 @media (min-width: 1280px) {
   .xl\:grid-cols-15 {
     grid-template-columns: repeat(15, minmax(0, 1fr));
   }
-}
-
-@keyframes zoom-in-95 {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.zoom-in-95 {
-  animation: zoom-in-95 0.2s ease-out forwards;
 }
 </style>

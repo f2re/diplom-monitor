@@ -4,6 +4,7 @@ from app.api.auth import router as auth_router
 from app.api.user import router as user_router
 from app.api.grid import router as grid_router
 from app.core.config import settings
+from app.core.notifications import start_scheduler
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -22,6 +23,13 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(user_router, prefix="/users", tags=["users"])
 app.include_router(grid_router, prefix="/grid", tags=["grid"])
+@app.on_event("startup")
+async def startup_event():
+    app.state.scheduler = start_scheduler()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    app.state.scheduler.shutdown()
 
 @app.get("/")
 async def root():
