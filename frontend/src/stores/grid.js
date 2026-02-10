@@ -17,10 +17,22 @@ export const useGridStore = defineStore('grid', {
     },
     loading: false,
     error: null,
+    config: {
+      start_date: null,
+      deadline: null
+    },
+    allProgress: [] // Array of { user_id, emoji, completions: [week_start_dates] }
   }),
   getters: {
     getWeekByDate: (state) => (dateString) => {
       return state.weeks.find(w => w.week_start_date === dateString);
+    },
+    getCompletionsByDate: (state) => (dateString) => {
+      return state.allProgress.map(up => ({
+        user_id: up.user_id,
+        emoji: up.emoji,
+        is_completed: up.completions.includes(dateString)
+      }));
     },
     isSpecialPeriod: (state) => (dateString) => {
       const weekDate = new Date(dateString);
@@ -33,22 +45,49 @@ export const useGridStore = defineStore('grid', {
     }
   },
   actions: {
+    async fetchGlobalConfig() {
+      try {
+        const response = await axios.get(`${API_URL}/grid/config`);
+        this.config = response.data;
+        return this.config;
+      } catch (err) {
+        console.error('Error fetching global config', err);
+      }
+    },
+    async fetchAllProgress() {
+      try {
+        const response = await axios.get(`${API_URL}/grid/all-progress`);
+        this.allProgress = response.data;
+      } catch (err) {
+        console.error('Error fetching all progress', err);
+      }
+    },
     async fetchGridData(userId = null) {
       this.loading = true;
       try {
         const authStore = useAuthStore();
         const targetId = userId || authStore.user?.id;
         
-        if (!targetId) return;
-
-        const [weeksRes, periodsRes, statsRes] = await Promise.all([
-          axios.get(`${API_URL}/grid/weeks/${targetId}`),
+        // Fetch config and all progress in parallel with user data
+        const promises = [
+          this.fetchGlobalConfig(),
+          this.fetchAllProgress(),
           axios.get(`${API_URL}/grid/special-periods/${targetId}`),
           axios.get(`${API_URL}/grid/stats/${targetId}`)
-        ]);
-        this.weeks = weeksRes.data;
-        this.specialPeriods = periodsRes.data;
-        this.stats = statsRes.data;
+        ];
+
+        if (targetId) {
+          promises.push(axios.get(`${API_URL}/grid/weeks/${targetId}`));
+        }
+
+        const results = await Promise.all(promises);
+        
+        // results indices: 0:config, 1:allProgress, 2:periods, 3:stats, 4:weeks (if targetId)
+        this.specialPeriods = results[2].data;
+        this.stats = results[3].data;
+        if (targetId && results[4]) {
+          this.weeks = results[4].data;
+        }
       } catch (err) {
         this.error = err.response?.data?.detail || 'Ошибка загрузки данных сетки';
       } finally {

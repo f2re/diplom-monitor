@@ -86,7 +86,7 @@ const toggleSettings = () => {
         <div class="flex items-center gap-6">
           <a href="#" class="hover:text-blue-600 transition-colors">Документация</a>
           <a href="#" class="hover:text-blue-600 transition-colors">Конфиденциальность</a>
-          <a href="https://github.com" target="_blank" class="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
+          <a href="https://github.com/f2re/diplom-monitor" target="_blank" class="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
             <Github class="w-4 h-4" />
             GitHub
           </a>

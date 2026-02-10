@@ -22,11 +22,22 @@ const newPeriod = ref({
   description: ''
 });
 
-const emojis = ['🎓', '📚', '💻', '🧪', '🎨', '🧬', '⚖️', '🏗️'];
+const emojis = [
+  '🎓', '📚', '💻', '🧪', '🎨', '🧬', '⚖️', '🏗️', 
+  '✍️', '📝', '🧘', '🔥', '🚀', '🌟', '🏆', '🎉',
+  '☕', '🍕', '🐱', '🧠', '💡', '📅', '⌛', '🏁'
+];
 
 onMounted(async () => {
   await gridStore.fetchGridData();
 });
+
+const handleCustomEmoji = (e) => {
+    const val = e.target.value;
+    if (val && val.length > 0) {
+        form.value.emoji = val.slice(-2).trim() || val.slice(0, 2).trim(); // Basic emoji parsing
+    }
+};
 
 const handleSubmit = async () => {
   const success = await authStore.updateProfile(form.value);
@@ -122,19 +133,30 @@ const handleDeletePeriod = async (id) => {
 
       <div class="space-y-3">
         <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Ваш эмодзи</label>
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-2">
           <button 
             v-for="e in emojis" 
             :key="e"
             type="button"
             @click="form.emoji = e"
             :class="[
-              'w-12 h-12 flex items-center justify-center text-2xl rounded-xl border-2 transition-all',
+              'w-10 h-10 flex items-center justify-center text-xl rounded-xl border-2 transition-all',
               form.emoji === e ? 'border-blue-500 bg-blue-50 shadow-inner' : 'border-gray-100 bg-gray-50 hover:border-gray-200'
             ]"
           >
             {{ e }}
           </button>
+          
+          <div class="relative flex items-center">
+            <input 
+                type="text" 
+                :value="!emojis.includes(form.emoji) ? form.emoji : ''"
+                @input="handleCustomEmoji"
+                placeholder="Свой..."
+                class="w-24 h-10 px-3 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl text-sm focus:border-blue-500 outline-none transition-all"
+            />
+            <Smile class="absolute right-2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
         </div>
       </div>
 

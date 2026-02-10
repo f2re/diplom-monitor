@@ -27,3 +27,7 @@ class GridStats(BaseModel):
     effective_weeks: int
     completed_weeks: int
     remaining_weeks: int
+
+class GridConfig(BaseModel):
+    start_date: Optional[date] = None
+    deadline: Optional[date] = None

@@ -35,11 +35,11 @@ const fetchTargetUser = async (userId) => {
 };
 
 const weeks = computed(() => {
-  const user = targetUser.value;
-  if (!user?.start_date || !user?.deadline) return [];
+  const config = gridStore.config;
+  if (!config?.start_date || !config?.deadline) return [];
   
-  const start = new Date(user.start_date);
-  const end = new Date(user.deadline);
+  const start = new Date(config.start_date);
+  const end = new Date(config.deadline);
   
   const weeksList = [];
   let current = new Date(start);
@@ -68,9 +68,9 @@ const currentWeekStart = computed(() => {
 });
 
 const currentWeekIndex = computed(() => {
-    const user = targetUser.value;
-    if (!user?.start_date) return -1;
-    const start = new Date(user.start_date);
+    const config = gridStore.config;
+    if (!config?.start_date) return -1;
+    const start = new Date(config.start_date);
     const now = new Date();
     const diffTime = now - start;
     if (diffTime < 0) return -1;
@@ -166,12 +166,12 @@ watch(selectedUserId, async (newId) => {
     </div>
 
     <!-- Пустое состояние, если даты не заданы -->
-    <div v-if="!targetUser?.start_date || !targetUser?.deadline" class="bg-blue-50 border-2 border-blue-200 rounded-3xl p-12 text-center">
+    <div v-if="!gridStore.config?.start_date || !gridStore.config?.deadline" class="bg-blue-50 border-2 border-blue-200 rounded-3xl p-12 text-center">
         <Loader2 v-if="loadingUser" class="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
         <template v-else>
             <h2 class="text-2xl font-black text-blue-900 mb-4">Даты не заданы 🗓️</h2>
             <p class="text-blue-700 font-medium max-w-md mx-auto mb-8">
-                {{ isOwnGrid ? 'Пожалуйста, укажите дату начала и дедлайн в настройках.' : 'Этот пользователь еще не указал даты своего обучения.' }}
+                {{ authStore.user?.is_superuser ? 'Пожалуйста, укажите дату начала и дедлайн в настройках.' : 'Администратор еще не указал глобальные даты обучения.' }}
             </p>
         </template>
     </div>
@@ -226,6 +226,7 @@ watch(selectedUserId, async (newId) => {
               :week-number="week.index"
               :start-date="week.startDate"
               :progress="gridStore.getWeekByDate(week.startDate)"
+              :completions="gridStore.getCompletionsByDate(week.startDate)"
               :special-period="gridStore.isSpecialPeriod(week.startDate)"
               :is-current="week.startDate === currentWeekStart"
               @click="openEditModal"
