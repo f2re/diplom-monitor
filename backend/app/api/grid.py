@@ -42,16 +42,19 @@ def get_all_progress(
     users = db.query(models.user.User).filter(models.user.User.is_active == True).all()
     results = []
     for user in users:
-        completions = db.query(models.week_progress.WeekProgress.week_start_date).filter(
+        completions = db.query(
+            models.week_progress.WeekProgress.week_start_date,
+            models.week_progress.WeekProgress.note
+        ).filter(
             models.week_progress.WeekProgress.user_id == user.id,
             models.week_progress.WeekProgress.is_completed == True
         ).all()
-        # Extract dates from list of tuples
-        completion_dates = [c[0] for c in completions]
+        
+        completion_data = [{"date": c[0], "note": c[1]} for c in completions]
         results.append({
             "user_id": user.id,
             "emoji": user.emoji or "🎓",
-            "completions": completion_dates
+            "completions": completion_data
         })
     return results
 

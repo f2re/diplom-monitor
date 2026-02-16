@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
 import { useAuthStore } from './auth';
+import { useUsersStore } from './users';
 
 const API_URL = 'http://localhost:8000';
 
@@ -21,18 +22,26 @@ export const useGridStore = defineStore('grid', {
       start_date: null,
       deadline: null
     },
-    allProgress: [] // Array of { user_id, emoji, completions: [week_start_dates] }
+    allProgress: [] // Array of { user_id, emoji, completions: [{ date: 'YYYY-MM-DD', note: '...' }] }
   }),
   getters: {
     getWeekByDate: (state) => (dateString) => {
       return state.weeks.find(w => w.week_start_date === dateString);
     },
     getCompletionsByDate: (state) => (dateString) => {
-      return state.allProgress.map(up => ({
-        user_id: up.user_id,
-        emoji: up.emoji,
-        is_completed: up.completions.includes(dateString)
-      }));
+      const usersStore = useUsersStore();
+      return state.allProgress.map(up => {
+        const completion = up.completions.find(c => c.date === dateString);
+        const user = usersStore.users.find(u => u.id === up.user_id);
+        
+        return {
+          user_id: up.user_id,
+          emoji: up.emoji,
+          full_name: user?.full_name || 'Unknown',
+          is_completed: !!completion,
+          note: completion?.note
+        };
+      });
     },
     isSpecialPeriod: (state) => (dateString) => {
       const weekDate = new Date(dateString);
@@ -107,8 +116,27 @@ export const useGridStore = defineStore('grid', {
         } else {
           this.weeks.push(response.data);
         }
-        // Refresh stats after updating week
+
+        // Update allProgress for reactivity
         const authStore = useAuthStore();
+        if (authStore.user?.id) {
+            // Update local state for immediate UI feedback
+            const userProgress = this.allProgress.find(p => p.user_id === authStore.user.id);
+            if (userProgress) {
+                if (isCompleted) {
+                    const existing = userProgress.completions.find(c => c.date === weekStartDate);
+                    if (!existing) {
+                        userProgress.completions.push({ date: weekStartDate, note });
+                    } else {
+                        existing.note = note;
+                    }
+                } else {
+                    userProgress.completions = userProgress.completions.filter(c => c.date !== weekStartDate);
+                }
+            }
+        }
+        
+        // Refresh stats after updating week
         if (authStore.user?.id) {
           const statsRes = await axios.get(`${API_URL}/grid/stats/${authStore.user.id}`);
           this.stats = statsRes.data;

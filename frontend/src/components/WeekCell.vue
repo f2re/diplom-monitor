@@ -87,13 +87,23 @@ const cellClasses = computed(() => {
     @click="emit('click', startDate, weekNumber)"
   >
     <!-- Tooltip -->
-    <div class="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 w-max min-w-[140px] bg-slate-900/95 backdrop-blur text-white text-[11px] rounded-xl p-3 shadow-2xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out origin-bottom pointer-events-none z-[60] flex flex-col gap-2 border border-slate-700/50">
+    <div class="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 w-max min-w-[200px] max-w-[250px] bg-slate-900/95 backdrop-blur text-white text-[10px] rounded-xl p-3 shadow-2xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out origin-bottom pointer-events-none z-[60] flex flex-col gap-2 border border-slate-700/50">
       <div v-if="!completions || completions.length === 0" class="text-slate-400 italic text-center">Нет участников</div>
-      <div v-else v-for="user in completions" :key="user.user_id" class="flex items-center justify-between gap-3 w-full">
-        <span class="text-base leading-none drop-shadow-md">{{ user.emoji }}</span>
-        <span :class="['font-bold', user.is_completed ? 'text-green-400' : 'text-slate-500']">
-          {{ user.is_completed ? 'Сделано' : '—' }}
-        </span>
+      <div v-else class="flex flex-col gap-2">
+          <div v-for="user in completions" :key="user.user_id" class="flex flex-col gap-0.5 border-b border-slate-700/50 last:border-0 pb-1.5 last:pb-0">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-sm leading-none">{{ user.emoji }}</span>
+                    <span class="font-bold text-slate-100">{{ user.full_name }}</span>
+                </div>
+                <span :class="['font-bold text-[9px]', user.is_completed ? 'text-green-400' : 'text-slate-500']">
+                  {{ user.is_completed ? '✓' : '—' }}
+                </span>
+            </div>
+            <div v-if="user.note" class="text-slate-400 italic pl-5 text-[9px] leading-tight line-clamp-2">
+                {{ user.note }}
+            </div>
+          </div>
       </div>
       <!-- Triangle pointer -->
       <div class="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-900/95"></div>

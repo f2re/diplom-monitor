@@ -32,7 +32,11 @@ class GridConfig(BaseModel):
     start_date: Optional[date] = None
     deadline: Optional[date] = None
 
+class WeekCompletionInfo(BaseModel):
+    date: date
+    note: Optional[str] = None
+
 class UserWeekProgress(BaseModel):
     user_id: int
     emoji: str
-    completions: List[date]
+    completions: List[WeekCompletionInfo]
