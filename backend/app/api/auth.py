@@ -48,6 +48,14 @@ def register_user(
             detail="The user with this username already exists in the system.",
         )
     
+    if user_in.emoji:
+        existing_emoji = db.query(models.user.User).filter(
+            models.user.User.emoji == user_in.emoji,
+            models.user.User.is_active == True
+        ).first()
+        if existing_emoji:
+            raise HTTPException(status_code=400, detail="Этот эмодзи уже занят другим участником")
+    
     # Check if this is the first user
     user_count = db.query(models.user.User).count()
     is_superuser = user_count == 0

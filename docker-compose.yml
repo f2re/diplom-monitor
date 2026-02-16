@@ -9,22 +9,25 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=diplom_monitor
-    ports:
-      - "127.0.0.1:5432:5432"
+    network_mode: host
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend
-    ports:
-      - "127.0.0.1:8000:8000"
+    network_mode: host
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/diplom_monitor
+      - DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/diplom_monitor
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   frontend:
     build: ./frontend
-    ports:
-      - "127.0.0.1:5173:5173"
+    network_mode: host
     volumes:
       - ./frontend:/app
       - /app/node_modules

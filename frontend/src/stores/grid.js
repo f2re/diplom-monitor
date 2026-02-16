@@ -15,7 +15,7 @@ export const useGridStore = defineStore('grid', {
       completed_weeks: 0,
       remaining_weeks: 0
     },
-    loading: false,
+    loading: false, saving: false,
     error: null,
     config: {
       start_date: null,
@@ -93,6 +93,7 @@ export const useGridStore = defineStore('grid', {
       }
     },
     async updateWeek(weekStartDate, isCompleted, note = null) {
+      this.saving = true;
       try {
         const response = await axios.post(`${API_URL}/grid/weeks`, {
           week_start_date: weekStartDate,
@@ -116,9 +117,12 @@ export const useGridStore = defineStore('grid', {
       } catch (err) {
         this.error = err.response?.data?.detail || 'Ошибка обновления недели';
         return false;
+      } finally {
+        this.saving = false;
       }
     },
     async addSpecialPeriod(periodData) {
+      this.saving = true;
       try {
         const response = await axios.post(`${API_URL}/grid/special-periods`, periodData);
         this.specialPeriods.push(response.data);
@@ -132,9 +136,12 @@ export const useGridStore = defineStore('grid', {
       } catch (err) {
         this.error = err.response?.data?.detail || 'Ошибка добавления периода';
         return false;
+      } finally {
+        this.saving = false;
       }
     },
     async deleteSpecialPeriod(periodId) {
+      this.saving = true;
       try {
         await axios.delete(`${API_URL}/grid/special-periods/${periodId}`);
         this.specialPeriods = this.specialPeriods.filter(p => p.id !== periodId);
@@ -148,6 +155,8 @@ export const useGridStore = defineStore('grid', {
       } catch (err) {
         this.error = err.response?.data?.detail || 'Ошибка удаления периода';
         return false;
+      } finally {
+        this.saving = false;
       }
     }
   }

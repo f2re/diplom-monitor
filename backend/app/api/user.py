@@ -66,7 +66,15 @@ def update_user_me(
             raise HTTPException(status_code=403, detail="Only admins can change the deadline")
         current_user.deadline = user_in.deadline
         
-    if user_in.emoji is not None:
+    if user_in.emoji is not None and user_in.emoji != current_user.emoji:
+        # Check if emoji is already taken
+        existing_user = db.query(models.user.User).filter(
+            models.user.User.emoji == user_in.emoji,
+            models.user.User.id != current_user.id,
+            models.user.User.is_active == True
+        ).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Этот эмодзи уже занят другим участником")
         current_user.emoji = user_in.emoji
     
     db.add(current_user)

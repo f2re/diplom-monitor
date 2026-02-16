@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth';
 import { useGridStore } from '../stores/grid';
 import { useUsersStore } from '../stores/users';
 import WeekCell from './WeekCell.vue';
+import SkeletonLoader from './UX/SkeletonLoader.vue';
 import { X, Save, Calendar, Clock, CheckCircle2, Users, User as UserIcon, Loader2 } from 'lucide-vue-next';
 import axios from 'axios';
 
@@ -48,7 +49,7 @@ const weeks = computed(() => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${dd}`;
+    return `${y}-${m}-${d}`;
   };
   
   const start = parseDate(config.start_date);
@@ -111,10 +112,17 @@ const editForm = ref({
 });
 
 const openEditModal = (startDate, weekNumber) => {
-  // Разрешить редактирование только для своей сетки И текущей недели
-  if (!isOwnGrid.value) return;
-  if (startDate !== currentWeekStart.value) return;
+  // Check strict week locking
+  if (startDate !== currentWeekStart.value) {
+    const isPast = new Date(startDate) < new Date(currentWeekStart.value);
+    alert(isPast ? "Эта неделя уже прошла и заблокирована 🔒" : "Эта неделя еще не наступила ⏳");
+    return;
+  }
 
+  // Разрешить редактирование только для своей сетки
+  if (!isOwnGrid.value) return;
+  
+  // Разрешаем редактирование любых недель, чтобы можно было исправлять ошибки или оставлять заметки
   const existing = gridStore.getWeekByDate(startDate);
   selectedWeekDate.value = startDate;
   selectedWeekNumber.value = weekNumber;
@@ -194,7 +202,20 @@ watch(selectedUserId, async (newId) => {
 
     <template v-else>
         <!-- Заголовок/Дашборд -->
-        <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-8 items-center justify-between transition-all">
+        <div v-if="gridStore.loading" class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-8 items-center justify-between">
+           <div class="space-y-4 w-full md:w-1/2">
+              <SkeletonLoader height="2.5rem" width="70%" />
+              <SkeletonLoader height="1.25rem" width="40%" />
+           </div>
+           <div class="flex gap-6 items-center">
+              <SkeletonLoader height="5rem" width="5rem" class="rounded-full" />
+              <div class="space-y-2">
+                 <SkeletonLoader height="1.25rem" width="100px" />
+                 <SkeletonLoader height="1.25rem" width="100px" />
+              </div>
+           </div>
+        </div>
+        <div v-else class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-8 items-center justify-between transition-all">
           <div class="space-y-2 text-center md:text-left">
             <div class="flex items-center justify-center md:justify-start gap-3">
                 <span class="text-4xl">{{ targetUser?.emoji }}</span>
@@ -235,7 +256,10 @@ watch(selectedUserId, async (newId) => {
 
         <!-- Сетка -->
         <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-          <div class="grid grid-cols-4 sm:grid-cols-7 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-15 gap-3">
+          <div v-if="gridStore.loading" class="grid grid-cols-4 sm:grid-cols-7 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-15 gap-3">
+            <SkeletonLoader v-for="i in 40" :key="i" height="2.5rem" width="100%" />
+          </div>
+          <div v-else class="grid grid-cols-4 sm:grid-cols-7 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-15 gap-3">
             <WeekCell 
               v-for="week in weeks" 
               :key="week.startDate" 
@@ -260,7 +284,7 @@ watch(selectedUserId, async (newId) => {
                 <span>Пропущено</span>
             </div>
             <div class="flex items-center gap-2">
-              <div class="w-4 h-4 bg-blue-50 border border-blue-400 rounded shadow-sm"></div>
+              <div class="w-4 h-4 bg-white border-2 border-blue-400 ring-2 ring-blue-400 ring-offset-1 rounded shadow-sm"></div>
               <span>Текущая неделя</span>
             </div>
             <div class="flex items-center gap-2">
@@ -269,7 +293,7 @@ watch(selectedUserId, async (newId) => {
             </div>
           </div>
           <div v-if="isOwnGrid" class="mt-4 text-xs text-gray-400 italic">
-            * Вы можете отмечать прогресс только для текущей недели.
+            * Нажмите на неделю, чтобы отметить прогресс или оставить заметку.
           </div>
         </div>
     </template>

@@ -7,13 +7,18 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem('token') || null,
     user: null,
-    loading: false,
+    loading: false, saving: false,
     error: null,
   }),
   getters: {
     isAuthenticated: (state) => !!state.token,
   },
   actions: {
+    init() {
+      if (this.token) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+      }
+    },
     async login(email, password) {
       this.loading = true;
       this.error = null;
@@ -25,7 +30,7 @@ export const useAuthStore = defineStore('auth', {
         const response = await axios.post(`${API_URL}/auth/login`, formData);
         this.token = response.data.access_token;
         localStorage.setItem('token', this.token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+        this.init();
         await this.fetchCurrentUser();
         return true;
       } catch (err) {
@@ -42,7 +47,7 @@ export const useAuthStore = defineStore('auth', {
             const response = await axios.post(`${API_URL}/auth/telegram`, telegramData);
             this.token = response.data.access_token;
             localStorage.setItem('token', this.token);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+            this.init();
             await this.fetchCurrentUser();
             return true;
         } catch (err) {
@@ -68,11 +73,15 @@ export const useAuthStore = defineStore('auth', {
     async fetchCurrentUser() {
       if (!this.token) return;
       try {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+        if (!axios.defaults.headers.common['Authorization']) {
+            this.init();
+        }
         const response = await axios.get(`${API_URL}/users/me`);
         this.user = response.data;
       } catch (err) {
-        this.logout();
+        if (err.response && err.response.status === 401) {
+            this.logout();
+        }
       }
     },
     logout() {

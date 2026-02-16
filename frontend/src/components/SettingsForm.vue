@@ -1,11 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useGridStore } from '../stores/grid';
-import { Save, Calendar, User, Smile, Loader2, Clock, Trash2, Plus, Info } from 'lucide-vue-next';
+import { useUsersStore } from '../stores/users';
+import { Save, Calendar, User, Smile, Loader2, Clock, Trash2, Plus, Info, X } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const gridStore = useGridStore();
+const usersStore = useUsersStore();
 const emit = defineEmits(['close']);
 
 const form = ref({
@@ -28,20 +30,31 @@ const emojis = [
   '☕', '🍕', '🐱', '🧠', '💡', '📅', '⌛', '🏁'
 ];
 
+const usedEmojis = computed(() => {
+  return usersStore.users
+    .filter(u => u.id !== authStore.user?.id)
+    .map(u => u.emoji);
+});
+
 onMounted(async () => {
-  await gridStore.fetchGridData();
+  await Promise.all([
+    gridStore.fetchGridData(),
+    usersStore.fetchUsers()
+  ]);
 });
 
 const handleCustomEmoji = (e) => {
     const val = e.target.value;
     if (val && val.length > 0) {
-        form.value.emoji = val.slice(-2).trim() || val.slice(0, 2).trim(); // Basic emoji parsing
+        const emoji = val.slice(-2).trim() || val.slice(0, 2).trim(); // Basic emoji parsing
+        form.value.emoji = emoji;
     }
 };
 
 const handleSubmit = async () => {
   const success = await authStore.updateProfile(form.value);
   if (success) {
+    await usersStore.fetchUsers();
     emit('close');
   }
 };
@@ -76,6 +89,14 @@ const handleDeletePeriod = async (id) => {
       </div>
     </div>
 
+    <!-- Отображение ошибок -->
+    <div v-if="authStore.error" class="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-700 animate-in slide-in-from-top-2">
+      <div class="bg-red-100 p-1.5 rounded-lg">
+        <X class="w-4 h-4 text-red-600" />
+      </div>
+      <p class="text-sm font-bold">{{ authStore.error }}</p>
+    </div>
+
     <form @submit.prevent="handleSubmit" class="space-y-6">
       <div class="space-y-2">
         <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Полное имя</label>
@@ -90,18 +111,14 @@ const handleDeletePeriod = async (id) => {
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div v-if="authStore.user?.is_superuser" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="space-y-2">
           <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Дата начала</label>
           <div class="relative">
             <input 
               v-model="form.start_date" 
               type="date" 
-              :disabled="!authStore.user?.is_superuser"
-              :class="[
-                'w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all',
-                !authStore.user?.is_superuser ? 'opacity-70 cursor-not-allowed bg-gray-100' : ''
-              ]"
+              class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
             <Calendar class="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
           </div>
@@ -113,18 +130,14 @@ const handleDeletePeriod = async (id) => {
             <input 
               v-model="form.deadline" 
               type="date" 
-              :disabled="!authStore.user?.is_superuser"
-              :class="[
-                'w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all',
-                !authStore.user?.is_superuser ? 'opacity-70 cursor-not-allowed bg-gray-100' : ''
-              ]"
+              class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
             <Clock class="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
           </div>
         </div>
       </div>
 
-      <div v-if="!authStore.user?.is_superuser" class="flex items-start gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+      <div v-if="authStore.user?.is_superuser" class="flex items-start gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
         <Info class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
         <p class="text-xs text-blue-700 leading-relaxed font-medium">
           Даты начала и окончания диплома устанавливаются администратором глобально для всех пользователей.
@@ -139,10 +152,13 @@ const handleDeletePeriod = async (id) => {
             :key="e"
             type="button"
             @click="form.emoji = e"
+            :disabled="usedEmojis.includes(e)"
             :class="[
               'w-10 h-10 flex items-center justify-center text-xl rounded-xl border-2 transition-all',
-              form.emoji === e ? 'border-blue-500 bg-blue-50 shadow-inner' : 'border-gray-100 bg-gray-50 hover:border-gray-200'
+              form.emoji === e ? 'border-blue-500 bg-blue-50 shadow-inner' : 'border-gray-100 bg-gray-50 hover:border-gray-200',
+              usedEmojis.includes(e) ? 'opacity-20 grayscale cursor-not-allowed' : ''
             ]"
+            :title="usedEmojis.includes(e) ? 'Этот эмодзи уже занят' : ''"
           >
             {{ e }}
           </button>
@@ -179,7 +195,7 @@ const handleDeletePeriod = async (id) => {
     </form>
 
     <!-- Секция управления периодами (Administrator Feature) -->
-    <div class="mt-10 space-y-6">
+    <div v-if="authStore.user?.is_superuser" class="mt-10 space-y-6">
       <div class="flex items-center gap-3">
         <div class="bg-indigo-100 p-2.5 rounded-xl">
           <Calendar class="w-5 h-5 text-indigo-600" />

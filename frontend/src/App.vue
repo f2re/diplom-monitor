@@ -1,28 +1,39 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useAuthStore } from './stores/auth';
+import { useGridStore } from './stores/grid';
 import AuthForm from './components/AuthForm.vue';
 import WeekGrid from './components/WeekGrid.vue';
 import SettingsForm from './components/SettingsForm.vue';
-import { LogOut, GraduationCap, Github, Settings as SettingsIcon } from 'lucide-vue-next';
+import StatusFeedback from './components/UX/StatusFeedback.vue';
+import { LogOut, GraduationCap, Github, Settings as SettingsIcon, Loader2 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
+const gridStore = useGridStore();
 const showSettings = ref(false);
+const appReady = ref(false);
+
+// Initialize auth headers immediately
+authStore.init();
 
 onMounted(async () => {
   if (authStore.token) {
     await authStore.fetchCurrentUser();
   }
+  appReady.value = true;
 });
 
 const toggleSettings = () => {
   showSettings.value = !showSettings.value;
 };
+
+const isSaving = computed(() => authStore.saving || gridStore.saving);
 </script>
 
 <template>
   <div class="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased flex flex-col">
-    <!-- Навигация -->
+    <StatusFeedback :saving="isSaving" />
+    <!-- Navigation -->
     <nav class="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
       <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <div class="flex items-center gap-3 cursor-pointer group" @click="showSettings = false">
@@ -40,7 +51,7 @@ const toggleSettings = () => {
           </div>
         </div>
 
-        <div v-if="authStore.isAuthenticated" class="flex items-center gap-2 sm:gap-4">
+        <div v-if="appReady && authStore.isAuthenticated" class="flex items-center gap-2 sm:gap-4">
           <div class="hidden sm:block text-right mr-2">
             <p class="text-sm font-bold text-slate-900 leading-none">{{ authStore.user?.full_name }}</p>
             <p class="text-xs font-medium text-slate-500">{{ authStore.user?.email || 'Telegram User' }}</p>
@@ -68,24 +79,30 @@ const toggleSettings = () => {
       </div>
     </nav>
 
-    <!-- Основной контент -->
+    <!-- Main Content -->
     <main class="py-12 flex-grow">
-      <div v-if="!authStore.isAuthenticated" class="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] px-4">
-        <AuthForm />
+      <!-- App Loading State -->
+      <div v-if="!appReady" class="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)]">
+         <Loader2 class="w-12 h-12 text-blue-600 animate-spin" />
       </div>
-      <div v-else class="max-w-7xl mx-auto px-4">
-        <SettingsForm v-if="showSettings" @close="showSettings = false" />
-        <WeekGrid v-else />
-      </div>
+      
+      <!-- Content when ready -->
+      <template v-else>
+          <div v-if="!authStore.isAuthenticated" class="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] px-4">
+            <AuthForm />
+          </div>
+          <div v-else class="max-w-7xl mx-auto px-4">
+            <SettingsForm v-if="showSettings" @close="showSettings = false" />
+            <WeekGrid v-else />
+          </div>
+      </template>
     </main>
 
-    <!-- Футер -->
+    <!-- Footer -->
     <footer class="py-8 border-t border-slate-200 bg-white">
       <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-slate-500 text-sm font-medium">
         <p>© 2026 DiplomMonitor. Сделано для студентов с ❤️</p>
         <div class="flex items-center gap-6">
-          <a href="#" class="hover:text-blue-600 transition-colors">Документация</a>
-          <a href="#" class="hover:text-blue-600 transition-colors">Конфиденциальность</a>
           <a href="https://github.com/f2re/diplom-monitor" target="_blank" class="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
             <Github class="w-4 h-4" />
             GitHub
