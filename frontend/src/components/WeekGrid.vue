@@ -3,6 +3,7 @@ import { computed, ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useGridStore } from '../stores/grid';
 import { useUsersStore } from '../stores/users';
+import { useToast } from '../composables/useToast';
 import WeekCell from './WeekCell.vue';
 import SkeletonLoader from './UX/SkeletonLoader.vue';
 import { X, Save, Calendar, Clock, CheckCircle2, Users, User as UserIcon, Loader2 } from 'lucide-vue-next';
@@ -11,6 +12,7 @@ import axios from 'axios';
 const authStore = useAuthStore();
 const gridStore = useGridStore();
 const usersStore = useUsersStore();
+const { add: addToast } = useToast();
 
 const selectedUserId = ref(null);
 const targetUser = ref(null);
@@ -115,7 +117,7 @@ const openEditModal = (startDate, weekNumber) => {
   // Check strict week locking
   if (startDate !== currentWeekStart.value) {
     const isPast = new Date(startDate) < new Date(currentWeekStart.value);
-    alert(isPast ? "Эта неделя уже прошла и заблокирована 🔒" : "Эта неделя еще не наступила ⏳");
+    addToast(isPast ? "Эта неделя уже прошла и заблокирована 🔒" : "Эта неделя еще не наступила ⏳", isPast ? 'warning' : 'info');
     return;
   }
 

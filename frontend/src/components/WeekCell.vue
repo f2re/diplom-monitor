@@ -87,7 +87,7 @@ const cellClasses = computed(() => {
     @click="emit('click', startDate, weekNumber)"
   >
     <!-- Tooltip -->
-    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[150px] bg-slate-900/95 backdrop-blur text-white text-[10px] rounded-lg p-2 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 flex flex-col gap-1.5 border border-slate-700">
+    <div class="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 w-max min-w-[140px] bg-slate-900/95 backdrop-blur text-white text-[11px] rounded-xl p-3 shadow-2xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out origin-bottom pointer-events-none z-[60] flex flex-col gap-2 border border-slate-700/50">
       <div v-if="!completions || completions.length === 0" class="text-slate-400 italic text-center">Нет участников</div>
       <div v-else v-for="user in completions" :key="user.user_id" class="flex items-center justify-between gap-3 w-full">
         <span class="text-base leading-none drop-shadow-md">{{ user.emoji }}</span>

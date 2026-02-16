@@ -6,6 +6,7 @@ import AuthForm from './components/AuthForm.vue';
 import WeekGrid from './components/WeekGrid.vue';
 import SettingsForm from './components/SettingsForm.vue';
 import StatusFeedback from './components/UX/StatusFeedback.vue';
+import ToastContainer from './components/UX/ToastContainer.vue';
 import { LogOut, GraduationCap, Github, Settings as SettingsIcon, Loader2 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -33,6 +34,7 @@ const isSaving = computed(() => authStore.saving || gridStore.saving);
 <template>
   <div class="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased flex flex-col">
     <StatusFeedback :saving="isSaving" />
+    <ToastContainer />
     <!-- Navigation -->
     <nav class="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
       <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">

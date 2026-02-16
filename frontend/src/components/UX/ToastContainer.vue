@@ -1,73 +1,50 @@
 <script setup>
 import { useToast } from '../../composables/useToast';
-import { X, CheckCircle, AlertTriangle, Info, AlertCircle } from 'lucide-vue-next';
+import { X, CheckCircle2, AlertTriangle, Info, XCircle } from 'lucide-vue-next';
 
 const { toasts, remove } = useToast();
 
 const getIcon = (type) => {
   switch (type) {
-    case 'success': return CheckCircle;
+    case 'success': return CheckCircle2;
     case 'warning': return AlertTriangle;
-    case 'error': return AlertCircle;
+    case 'error': return XCircle;
     default: return Info;
   }
 };
 
 const getClasses = (type) => {
-  const base = 'pointer-events-auto w-full max-w-sm overflow-hidden rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 transition-all transform';
-  const colors = {
-    success: 'bg-white border-l-4 border-green-500',
-    warning: 'bg-white border-l-4 border-amber-500',
-    error: 'bg-white border-l-4 border-red-500',
-    info: 'bg-white border-l-4 border-blue-500',
-  };
-  return `${base} ${colors[type] || colors.info}`;
+  const base = "flex items-start gap-3 p-4 rounded-xl shadow-lg border backdrop-blur-md transition-all duration-300 transform translate-y-0 opacity-100 max-w-sm w-full pointer-events-auto";
+  switch (type) {
+    case 'success': return `${base} bg-green-50/90 border-green-200 text-green-800`;
+    case 'warning': return `${base} bg-amber-50/90 border-amber-200 text-amber-800`;
+    case 'error': return `${base} bg-red-50/90 border-red-200 text-red-800`;
+    default: return `${base} bg-blue-50/90 border-blue-200 text-blue-800`;
+  }
 };
 </script>
 
 <template>
-  <div aria-live="assertive" class="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-6 z-[100]">
-    <div class="flex w-full flex-col items-center space-y-4 sm:items-end">
-      <TransitionGroup
-        enter-active-class="transform ease-out duration-300 transition"
-        enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
-        enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
-        leave-active-class="transition ease-in duration-100"
-        leave-from-class="opacity-100"
-        leave-to-class="opacity-0"
+  <div class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+    <TransitionGroup 
+      enter-active-class="transition ease-out duration-300"
+      enter-from-class="transform translate-y-2 opacity-0"
+      enter-to-class="transform translate-y-0 opacity-100"
+      leave-active-class="transition ease-in duration-200"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div 
+        v-for="toast in toasts" 
+        :key="toast.id" 
+        :class="getClasses(toast.type)"
       >
-        <div v-for="toast in toasts" :key="toast.id" :class="getClasses(toast.type)">
-          <div class="p-4">
-            <div class="flex items-start">
-              <div class="flex-shrink-0">
-                <component 
-                  :is="getIcon(toast.type)" 
-                  class="h-6 w-6" 
-                  :class="{
-                    'text-green-400': toast.type === 'success',
-                    'text-amber-400': toast.type === 'warning',
-                    'text-red-400': toast.type === 'error',
-                    'text-blue-400': toast.type === 'info'
-                  }" 
-                />
-              </div>
-              <div class="ml-3 w-0 flex-1 pt-0.5">
-                <p class="text-sm font-medium text-gray-900">{{ toast.message }}</p>
-              </div>
-              <div class="ml-4 flex flex-shrink-0">
-                <button 
-                  type="button" 
-                  @click="remove(toast.id)"
-                  class="inline-flex rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  <span class="sr-only">Close</span>
-                  <X class="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </TransitionGroup>
-    </div>
+        <component :is="getIcon(toast.type)" class="w-5 h-5 mt-0.5 shrink-0" />
+        <div class="flex-1 text-sm font-medium leading-tight pt-0.5">{{ toast.message }}</div>
+        <button @click="remove(toast.id)" class="text-current opacity-60 hover:opacity-100 transition-opacity">
+          <X class="w-4 h-4" />
+        </button>
+      </div>
+    </TransitionGroup>
   </div>
 </template>
