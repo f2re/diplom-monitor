@@ -26,9 +26,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
-app.include_router(user_router, prefix="/api/users", tags=["users"])
-app.include_router(grid_router, prefix="/api/grid", tags=["grid"])
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(user_router, prefix="/users", tags=["users"])
+app.include_router(grid_router, prefix="/grid", tags=["grid"])
 
 def init_db():
     db = SessionLocal()

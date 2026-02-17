@@ -16,7 +16,8 @@ export default defineConfig({
     allowedHosts: ['diplom.app-studio.online'],
     hmr: {
       host: 'diplom.app-studio.online',
-      clientPort: 80,
+      protocol: 'wss',
+      clientPort: 443,
     },
     watch: {
       usePolling: true,
