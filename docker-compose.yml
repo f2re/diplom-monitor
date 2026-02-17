@@ -3,8 +3,6 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -20,7 +18,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/diplom_monitor
       - SECRET_KEY=generate_a_secure_random_string_here
@@ -31,7 +29,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "5173:5173"
+      - "127.0.0.1:5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
