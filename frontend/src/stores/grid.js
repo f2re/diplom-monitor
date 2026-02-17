@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuthStore } from './auth';
 import { useUsersStore } from './users';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = '/api';
 
 export const useGridStore = defineStore('grid', {
   state: () => ({
