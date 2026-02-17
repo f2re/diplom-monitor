@@ -18,6 +18,7 @@ const appReady = ref(false);
 authStore.init();
 
 onMounted(async () => {
+  await authStore.fetchConfig();
   if (authStore.token) {
     await authStore.fetchCurrentUser();
   }

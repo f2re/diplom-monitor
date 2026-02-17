@@ -20,6 +20,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/diplom_monitor
       - SECRET_KEY=generate_a_secure_random_string_here
+      - TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
+      - TELEGRAM_BOT_NAME=your_bot_username_without_at
     depends_on:
       db:
         condition: service_healthy

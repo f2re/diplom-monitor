@@ -7,6 +7,7 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem('token') || null,
     user: null,
+    telegramBotName: null,
     loading: false, saving: false,
     error: null,
   }),
@@ -14,6 +15,14 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => !!state.token,
   },
   actions: {
+    async fetchConfig() {
+        try {
+            const response = await axios.get(`${API_URL}/auth/config`);
+            this.telegramBotName = response.data.telegram_bot_name;
+        } catch (err) {
+            console.error('Failed to fetch config', err);
+        }
+    },
     init() {
       if (this.token) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;

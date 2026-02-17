@@ -125,3 +125,12 @@ def login_telegram(
         ),
         "token_type": "bearer",
     }
+
+@router.get("/config")
+def get_config() -> Any:
+    """
+    Get public configuration.
+    """
+    return {
+        "telegram_bot_name": settings.TELEGRAM_BOT_NAME
+    }
