@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
-import { API_URL } from '../config';
+
+const API_URL = '/api';
 
 export const useUsersStore = defineStore('users', {
   state: () => ({
