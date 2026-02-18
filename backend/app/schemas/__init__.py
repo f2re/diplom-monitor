@@ -1,3 +1,11 @@
-from .user import UserBase, UserCreate, UserUpdate, UserOut, Token, TokenData
-from .week_progress import WeekProgressBase, WeekProgressCreate, WeekProgressUpdate, WeekProgressOut
-from .special_period import SpecialPeriodBase, SpecialPeriodCreate, SpecialPeriodUpdate, SpecialPeriodOut
+from .user import UserCreate, UserOut, UserUpdate, Token, TelegramAuth
+from .week_progress import WeekProgressCreate, WeekProgressUpdate, WeekProgressOut, WeekStatusUpdate
+from .special_period import SpecialPeriodCreate, SpecialPeriodUpdate, SpecialPeriodOut
+from .config import ConfigResponse
+
+__all__ = [
+    "UserCreate", "UserOut", "UserUpdate", "Token", "TelegramAuth",
+    "WeekProgressCreate", "WeekProgressUpdate", "WeekProgressOut", "WeekStatusUpdate",
+    "SpecialPeriodCreate", "SpecialPeriodUpdate", "SpecialPeriodOut",
+    "ConfigResponse",
+]

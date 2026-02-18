@@ -126,11 +126,11 @@ def login_telegram(
         "token_type": "bearer",
     }
 
-@router.get("/config")
+@router.get("/config", response_model=schemas.config.ConfigResponse)
 def get_config() -> Any:
     """
     Get public configuration.
     """
-    return {
-        "telegram_bot_name": settings.TELEGRAM_BOT_NAME
-    }
+    return schemas.config.ConfigResponse(
+        telegram_bot_name=settings.TELEGRAM_BOT_NAME
+    )
