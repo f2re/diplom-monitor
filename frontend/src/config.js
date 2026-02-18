@@ -1,2 +1,3 @@
-// API Configuration
-export const API_URL = import.meta.env.VITE_API_URL || '/api';
+// Централизованная конфигурация фронтенда
+// Относительный путь - протокол наследуется автоматически (http/https)
+export const API_URL = '/api';

@@ -8,6 +8,7 @@ import WeekCell from './WeekCell.vue';
 import SkeletonLoader from './UX/SkeletonLoader.vue';
 import { X, Save, Calendar, Clock, CheckCircle2, Users, User as UserIcon, Loader2 } from 'lucide-vue-next';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 const authStore = useAuthStore();
 const gridStore = useGridStore();
@@ -28,7 +29,7 @@ const fetchTargetUser = async (userId) => {
   }
   loadingUser.value = true;
   try {
-    const response = await axios.get(`http://localhost:8000/users/${userId}`);
+    const response = await axios.get(`${API_URL}/users/${userId}`);
     targetUser.value = response.data;
   } catch (err) {
     console.error('Не удалось загрузить профиль пользователя', err);
@@ -41,19 +42,11 @@ const weeks = computed(() => {
   const config = gridStore.config;
   if (!config?.start_date || !config?.deadline) return [];
   
-  // Use YYYY, MM, DD to avoid timezone shifts when parsing
   const parseDate = (dateStr) => {
     const [y, m, d] = dateStr.split('-').map(Number);
     return new Date(y, m - 1, d);
   };
 
-  const formatDate = (date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  };
-  
   const start = parseDate(config.start_date);
   const end = parseDate(config.deadline);
   
@@ -82,8 +75,8 @@ const totalWeeks = computed(() => weeks.value.length);
 
 const currentWeekStart = computed(() => {
   const today = new Date();
-  const day = today.getDay(); // 0 (Sun) to 6 (Sat)
-  const diff = today.getDate() - (day === 0 ? 6 : day - 1); // Adjust to get Monday
+  const day = today.getDay();
+  const diff = today.getDate() - (day === 0 ? 6 : day - 1);
   const monday = new Date(today.setDate(diff));
   
   const yyyy = monday.getFullYear();
@@ -114,21 +107,17 @@ const editForm = ref({
 });
 
 const openEditModal = (startDate, weekNumber) => {
-  // Check strict week locking
   if (startDate !== currentWeekStart.value) {
     const isPast = new Date(startDate) < new Date(currentWeekStart.value);
     addToast(isPast ? "Эта неделя уже прошла и заблокирована 🔒" : "Эта неделя еще не наступила ⏳", isPast ? 'warning' : 'info');
     return;
   }
-
-  // Разрешить редактирование только для своей сетки
   if (!isOwnGrid.value) return;
   
-  // Разрешаем редактирование любых недель, чтобы можно было исправлять ошибки или оставлять заметки
   const existing = gridStore.getWeekByDate(startDate);
   selectedWeekDate.value = startDate;
   selectedWeekNumber.value = weekNumber;
-  editForm.value = existing ? { ...existing } : {
+  editForm.value = existing ? { is_completed: existing.is_completed, note: existing.note || '' } : {
     is_completed: true,
     note: ''
   };
@@ -152,7 +141,7 @@ onMounted(async () => {
   selectedUserId.value = authStore.user?.id;
   targetUser.value = authStore.user;
   await Promise.all([
-    gridStore.fetchGridData(),
+    gridStore.fetchGridData(authStore.user?.id),
     usersStore.fetchUsers()
   ]);
 });
@@ -193,9 +182,9 @@ watch(selectedUserId, async (newId) => {
 
     <!-- Пустое состояние, если даты не заданы -->
     <div v-if="!gridStore.config?.start_date || !gridStore.config?.deadline" class="bg-blue-50 border-2 border-blue-200 rounded-3xl p-12 text-center">
-        <Loader2 v-if="loadingUser" class="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+        <Loader2 v-if="gridStore.loading" class="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
         <template v-else>
-            <h2 class="text-2xl font-black text-blue-900 mb-4">Даты не заданы 🗓️</h2>
+            <h2 class="text-2xl font-black text-blue-900 mb-4">Даты не заданы 📅</h2>
             <p class="text-blue-700 font-medium max-w-md mx-auto mb-8">
                 {{ authStore.user?.is_superuser ? 'Пожалуйста, укажите дату начала и дедлайн в настройках.' : 'Администратор еще не указал глобальные даты обучения.' }}
             </p>
