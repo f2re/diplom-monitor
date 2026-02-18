@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
-
-const API_URL = '/api';
+import { API_URL } from '../config';
 
 export const useUsersStore = defineStore('users', {
   state: () => ({
@@ -13,7 +12,7 @@ export const useUsersStore = defineStore('users', {
     async fetchUsers() {
       this.loading = true;
       try {
-        const response = await axios.get(`${API_URL}/users`);
+        const response = await axios.get(`${API_URL}/users/`);
         this.users = response.data;
       } catch (err) {
         this.error = 'Ошибка загрузки списка пользователей';
