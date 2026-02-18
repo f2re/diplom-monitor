@@ -95,8 +95,16 @@ const isSaving = computed(() => authStore.saving || gridStore.saving);
             <AuthForm />
           </div>
           <div v-else class="max-w-7xl mx-auto px-4">
-            <SettingsForm v-if="showSettings" @close="showSettings = false" />
-            <WeekGrid v-else />
+            <!-- :key пересоздаёт компонент при смене пользователя → onMounted срабатывает заново -->
+            <SettingsForm 
+              v-if="showSettings" 
+              :key="'settings-' + authStore.user?.id"
+              @close="showSettings = false" 
+            />
+            <WeekGrid 
+              v-else 
+              :key="'grid-' + authStore.user?.id"
+            />
           </div>
       </template>
     </main>

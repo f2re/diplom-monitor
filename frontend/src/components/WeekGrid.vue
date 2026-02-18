@@ -117,10 +117,9 @@ const openEditModal = (startDate, weekNumber) => {
   const existing = gridStore.getWeekByDate(startDate);
   selectedWeekDate.value = startDate;
   selectedWeekNumber.value = weekNumber;
-  editForm.value = existing ? { is_completed: existing.is_completed, note: existing.note || '' } : {
-    is_completed: true,
-    note: ''
-  };
+  editForm.value = existing 
+    ? { is_completed: existing.is_completed, note: existing.note || '' } 
+    : { is_completed: true, note: '' };
 };
 
 const closeEditModal = () => {
@@ -134,19 +133,26 @@ const saveWeekProgress = async () => {
     editForm.value.is_completed,
     editForm.value.note
   );
-  if (success) closeEditModal();
+  if (success) {
+    closeEditModal();
+    addToast('Прогресс сохранён! 🚀', 'success');
+  }
 };
 
 onMounted(async () => {
-  selectedUserId.value = authStore.user?.id;
+  // Безопасная защита: если пользователь ещё не загружен - ничего не делаем
+  if (!authStore.user?.id) return;
+
+  selectedUserId.value = authStore.user.id;
   targetUser.value = authStore.user;
   await Promise.all([
-    gridStore.fetchGridData(authStore.user?.id),
+    gridStore.fetchGridData(authStore.user.id),
     usersStore.fetchUsers()
   ]);
 });
 
 watch(selectedUserId, async (newId) => {
+  if (!newId) return;
   await fetchTargetUser(newId);
   await gridStore.fetchGridData(newId);
 });
@@ -351,9 +357,11 @@ watch(selectedUserId, async (newId) => {
           </button>
           <button 
             @click="saveWeekProgress" 
-            class="flex-1 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200 active:scale-95"
+            :disabled="gridStore.saving"
+            class="flex-1 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200 active:scale-95 disabled:opacity-70"
           >
-            <Save class="w-5 h-5" />
+            <Loader2 v-if="gridStore.saving" class="w-5 h-5 animate-spin" />
+            <Save v-else class="w-5 h-5" />
             Сохранить
           </button>
         </div>

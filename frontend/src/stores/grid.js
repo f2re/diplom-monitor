@@ -14,11 +14,9 @@ export const useGridStore = defineStore('grid', {
     error: null,
   }),
   getters: {
-    // Получить данные недели текущего пользователя по дате
     getWeekByDate: (state) => (weekStartDate) => {
       return state.weeks.find(w => w.week_start_date === weekStartDate) || null
     },
-    // Получить отметки всех пользователей за неделю
     getCompletionsByDate: (state) => (weekStartDate) => {
       return state.allProgress
         .filter(p => p.completions.some(c => c.date === weekStartDate))
@@ -27,7 +25,6 @@ export const useGridStore = defineStore('grid', {
           note: p.completions.find(c => c.date === weekStartDate)?.note || null
         }))
     },
-    // Проверить является ли неделя специальным периодом
     isSpecialPeriod: (state) => (weekStartDate) => {
       if (!state.specialPeriods.length) return null
       const weekDate = new Date(weekStartDate)
@@ -47,17 +44,14 @@ export const useGridStore = defineStore('grid', {
     },
   },
   actions: {
-    // Главный метод для загрузки всех данных сетки
     async fetchGridData(userId = null) {
       this.loading = true
       this.error = null
       try {
-        // Загружаем конфиг и общий прогресс всегда
         await Promise.all([
           this.fetchConfig(),
           this.fetchAllProgress(),
         ])
-        // Если передан userId - загружаем данные по нему
         if (userId) {
           await Promise.all([
             this.fetchWeeks(userId),
@@ -114,16 +108,15 @@ export const useGridStore = defineStore('grid', {
         console.error('Failed to load all progress', err)
       }
     },
-    // Обновить неделю (заменяет toggleWeek + updateWeekNote)
+    // POST (не PUT!) — так ожидает backend
     async updateWeek(weekStartDate, isCompleted, note) {
       this.saving = true
       try {
-        await axios.put(`${API_URL}/grid/weeks`, {
+        await axios.post(`${API_URL}/grid/weeks`, {
           week_start_date: weekStartDate,
           is_completed: isCompleted,
           note: note,
         })
-        // Обновляем локальное состояние
         const existing = this.weeks.find(w => w.week_start_date === weekStartDate)
         if (existing) {
           existing.is_completed = isCompleted
@@ -141,14 +134,9 @@ export const useGridStore = defineStore('grid', {
       }
     },
     async toggleWeek(weekStartDate) {
-      this.saving = true
-      try {
-        const week = this.weeks.find(w => w.week_start_date === weekStartDate)
-        const newStatus = week ? !week.is_completed : true
-        return await this.updateWeek(weekStartDate, newStatus, week?.note || null)
-      } finally {
-        this.saving = false
-      }
+      const week = this.weeks.find(w => w.week_start_date === weekStartDate)
+      const newStatus = week ? !week.is_completed : true
+      return await this.updateWeek(weekStartDate, newStatus, week?.note || null)
     },
     async updateWeekNote(weekStartDate, note) {
       const week = this.weeks.find(w => w.week_start_date === weekStartDate)
