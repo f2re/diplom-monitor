@@ -17,14 +17,38 @@ export const useGridStore = defineStore('grid', {
     getWeekByDate: (state) => (weekStartDate) => {
       return state.weeks.find(w => w.week_start_date === weekStartDate) || null
     },
-    getCompletionsByDate: (state) => (weekStartDate) => {
-      return state.allProgress
-        .filter(p => p.completions.some(c => c.date === weekStartDate))
-        .map(p => ({
-          emoji: p.emoji,
-          note: p.completions.find(c => c.date === weekStartDate)?.note || null
-        }))
+
+    // Возвращает ВСЕХ зарегистрированных пользователей с их статусом для конкретной недели
+    // users — массив из usersStore.users (нужен для full_name)
+    getAllUsersForWeek: (state) => (weekStartDate, users = []) => {
+      return users.map(user => {
+        const userProgress = state.allProgress.find(p => p.user_id === user.id)
+        const completion = userProgress?.completions.find(c => c.date === weekStartDate)
+        return {
+          user_id: user.id,
+          full_name: user.full_name || 'Без имени',
+          emoji: userProgress?.emoji || user.emoji || '🎓',
+          is_completed: !!completion,
+          note: completion?.note || null,
+        }
+      })
     },
+
+    // Только отметившиеся (для отображения эмодзи в клетке)
+    getCompletionsByDate: (state) => (weekStartDate, users = []) => {
+      return users.map(user => {
+        const userProgress = state.allProgress.find(p => p.user_id === user.id)
+        const completion = userProgress?.completions.find(c => c.date === weekStartDate)
+        return {
+          user_id: user.id,
+          full_name: user.full_name || 'Без имени',
+          emoji: userProgress?.emoji || user.emoji || '🎓',
+          is_completed: !!completion,
+          note: completion?.note || null,
+        }
+      })
+    },
+
     isSpecialPeriod: (state) => (weekStartDate) => {
       if (!state.specialPeriods.length) return null
       const weekDate = new Date(weekStartDate)
@@ -108,7 +132,6 @@ export const useGridStore = defineStore('grid', {
         console.error('Failed to load all progress', err)
       }
     },
-    // POST (не PUT!) — так ожидает backend
     async updateWeek(weekStartDate, isCompleted, note) {
       this.saving = true
       try {
@@ -121,9 +144,22 @@ export const useGridStore = defineStore('grid', {
         if (existing) {
           existing.is_completed = isCompleted
           existing.note = note
+          // Обновляем allProgress для текущего пользователя
+          const myProgress = this.allProgress.find(p => p.user_id === existing.user_id)
+          if (myProgress) {
+            const comp = myProgress.completions.find(c => c.date === weekStartDate)
+            if (isCompleted) {
+              if (comp) comp.note = note
+              else myProgress.completions.push({ date: weekStartDate, note })
+            } else {
+              myProgress.completions = myProgress.completions.filter(c => c.date !== weekStartDate)
+            }
+          }
         } else {
           this.weeks.push({ week_start_date: weekStartDate, is_completed: isCompleted, note })
         }
+        // Перезагружаем allProgress для синхронизации
+        await this.fetchAllProgress()
         return true
       } catch (err) {
         this.error = 'Не удалось сохранить прогресс'
@@ -137,10 +173,6 @@ export const useGridStore = defineStore('grid', {
       const week = this.weeks.find(w => w.week_start_date === weekStartDate)
       const newStatus = week ? !week.is_completed : true
       return await this.updateWeek(weekStartDate, newStatus, week?.note || null)
-    },
-    async updateWeekNote(weekStartDate, note) {
-      const week = this.weeks.find(w => w.week_start_date === weekStartDate)
-      return await this.updateWeek(weekStartDate, week?.is_completed || false, note)
     },
     async createSpecialPeriod(periodData) {
       this.saving = true
